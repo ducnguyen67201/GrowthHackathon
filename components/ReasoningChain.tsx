@@ -7,12 +7,26 @@ type Props = {
   anchorFact: string;
 };
 
-const STEPS: { key: keyof Reasoning; label: string }[] = [
-  { key: "saw", label: "Saw" },
-  { key: "inferred", label: "Inferred" },
-  { key: "pain", label: "Pain" },
-  { key: "angle", label: "Angle" },
-  { key: "whyThisAngle", label: "Why this angle" },
+// hint = a plain-language gloss shown on hover, so the chain reads to someone
+// who's never seen it before — not just to the team that named the steps.
+const STEPS: { key: keyof Reasoning; label: string; hint: string }[] = [
+  { key: "saw", label: "Saw", hint: "The concrete signal we observed" },
+  {
+    key: "inferred",
+    label: "Inferred",
+    hint: "What that signal implies about them",
+  },
+  {
+    key: "pain",
+    label: "Pain",
+    hint: "The problem this creates for them right now",
+  },
+  { key: "angle", label: "Angle", hint: "The outreach hook we chose" },
+  {
+    key: "whyThisAngle",
+    label: "Why this angle",
+    hint: "Why this beats the obvious pitch",
+  },
 ];
 
 export function ReasoningChain({ reasoning, anchorFact }: Props) {
@@ -29,9 +43,11 @@ export function ReasoningChain({ reasoning, anchorFact }: Props) {
         </span>
       </div>
       <ol className="reasoning-chain">
-        {STEPS.map(({ key, label }) => (
+        {STEPS.map(({ key, label, hint }) => (
           <li key={key} className="reasoning-step">
-            <span className="reasoning-label">{label}</span>
+            <span className="reasoning-label" title={hint}>
+              {label}
+            </span>
             <span className="reasoning-text">{String(reasoning[key])}</span>
           </li>
         ))}

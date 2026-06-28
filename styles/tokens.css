@@ -1,20 +1,27 @@
 /* Design tokens — defined in Wave 0 so all UI branches (C/E/G) stay consistent.
-   The polish branch refines; branches reference these, never hardcode palette. */
+   Branches reference these, never hardcode palette.
+
+   Light theme: a clean cool-white page with white cards that lift off it, deep
+   slate text, and a deepened emerald "cyborg" accent that stays legible both as
+   text on white and as a fill behind white text (--color-on-accent). */
 :root {
-  /* surfaces */
-  --color-bg: oklch(20% 0.02 260);
-  --color-surface: oklch(26% 0.02 260);
-  --color-surface-2: oklch(31% 0.025 260);
-  --color-border: oklch(40% 0.02 260);
+  /* surfaces — light, cool paper; cards are pure white and sit above the page */
+  --color-bg: oklch(97% 0.006 250);
+  --color-surface: oklch(100% 0 0);
+  --color-surface-2: oklch(96.5% 0.008 250);
+  --color-border: oklch(89% 0.012 250);
 
-  /* text */
-  --color-text: oklch(96% 0.01 260);
-  --color-text-dim: oklch(74% 0.02 260);
+  /* text — deep slate, not pure black */
+  --color-text: oklch(26% 0.02 262);
+  --color-text-dim: oklch(50% 0.018 262);
 
-  /* accent — the "cyborg" signal color */
-  --color-accent: oklch(72% 0.18 150);
-  --color-accent-2: oklch(70% 0.2 280);
-  --color-danger: oklch(64% 0.22 25);
+  /* accent — the "cyborg" signal color, deepened for contrast on white */
+  --color-accent: oklch(52% 0.14 156);
+  --color-accent-2: oklch(50% 0.19 285);
+  --color-danger: oklch(53% 0.2 25);
+
+  /* text/icons that sit on top of an accent/danger fill */
+  --color-on-accent: oklch(99% 0 0);
 
   /* type scale */
   --text-sm: clamp(0.82rem, 0.8rem + 0.1vw, 0.9rem);
@@ -29,6 +36,15 @@
   --space-4: 2.5rem;
   --radius: 14px;
   --radius-sm: 8px;
+
+  /* elevation — soft, tinted shadows read better than pure black on light */
+  --shadow-card:
+    0 1px 2px oklch(40% 0.04 262 / 0.05),
+    0 6px 18px -12px oklch(40% 0.04 262 / 0.22);
+  --shadow-card-hover:
+    0 2px 4px oklch(40% 0.04 262 / 0.06),
+    0 14px 30px -14px oklch(40% 0.04 262 / 0.3);
+  --shadow-pop: 0 14px 34px -16px oklch(40% 0.04 262 / 0.28);
 
   /* motion (compositor-friendly only) */
   --dur-fast: 150ms;

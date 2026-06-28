@@ -1,0 +1,240 @@
+/* SendFunnel — the staged "funnel" overlay shown while a creative is sent.
+   Tokens only (see styles/tokens.css). Motion is opacity/transform/clip only. */
+
+.funnel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: var(--space-2);
+  background: oklch(26% 0.02 262 / 0.32);
+  backdrop-filter: blur(3px);
+  animation: funnel-fade var(--dur) var(--ease);
+}
+
+.funnel-panel {
+  width: min(420px, 100%);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+  padding: var(--space-3);
+  animation: funnel-rise var(--dur) var(--ease);
+}
+
+.funnel-head {
+  margin-bottom: var(--space-2);
+}
+
+.funnel-eyebrow {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.funnel-panel--error .funnel-eyebrow {
+  color: var(--color-danger);
+}
+
+.funnel-title {
+  margin: 0.2rem 0 0;
+  font-size: var(--text-lg);
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+/* The rail: stages stacked vertically, each node linked by a connector that
+   fills as the stage completes. */
+.funnel-rail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.funnel-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: var(--space-1);
+  padding-bottom: var(--space-2);
+  transition: opacity var(--dur) var(--ease);
+}
+
+.funnel-stage:last-child {
+  padding-bottom: 0;
+}
+
+/* connector line between this node and the next */
+.funnel-stage:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 28px;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-border);
+}
+.funnel-stage:not(:last-child).is-done::before {
+  background: var(--color-accent);
+}
+
+.funnel-node {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-dim);
+  font-size: 0.85rem;
+  font-weight: 700;
+  z-index: 1;
+  transition:
+    border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.funnel-pip {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-border);
+}
+
+.is-active .funnel-node {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.is-active .funnel-pip {
+  background: var(--color-accent);
+  animation: funnel-pulse 1s var(--ease) infinite;
+}
+
+.is-done .funnel-node {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  animation: funnel-pop var(--dur) var(--ease);
+}
+
+.is-error .funnel-node {
+  border-color: var(--color-danger);
+  background: var(--color-danger);
+  color: var(--color-on-accent);
+}
+
+/* small spinner for the final stage while the real send is still in flight */
+.funnel-spin {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in oklch, var(--color-accent) 30%, transparent);
+  border-top-color: var(--color-accent);
+  animation: funnel-rotate 0.6s linear infinite;
+}
+
+.funnel-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-top: 3px;
+}
+
+.funnel-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.funnel-sub {
+  font-size: 0.78rem;
+  color: var(--color-text-dim);
+}
+
+.funnel-stage.is-pending {
+  opacity: 0.5;
+}
+
+/* skipped (e.g. gated video off): muted, dashed node, struck-through feel */
+.funnel-stage.is-skipped {
+  opacity: 0.55;
+}
+.is-skipped .funnel-node {
+  border-style: dashed;
+  color: var(--color-text-dim);
+}
+.is-skipped .funnel-label {
+  color: var(--color-text-dim);
+}
+
+.funnel-foot {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.funnel-error {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}
+
+.funnel-close {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.funnel-close:hover {
+  border-color: var(--color-accent);
+}
+
+@keyframes funnel-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes funnel-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+@keyframes funnel-pulse {
+  50% {
+    transform: scale(1.55);
+    opacity: 0.6;
+  }
+}
+@keyframes funnel-pop {
+  from {
+    transform: scale(0.6);
+  }
+}
+@keyframes funnel-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .funnel-backdrop,
+  .funnel-panel,
+  .is-done .funnel-node,
+  .is-active .funnel-pip,
+  .funnel-spin {
+    animation: none;
+  }
+}

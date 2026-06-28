@@ -38,7 +38,12 @@ export type LiveEvent =
       cached: boolean;
     }
   | { stage: "skip"; why: string }
+  | { stage: "notfound"; query: string }
   | { stage: "error"; message: string };
+
+// Fiber "no data" outcomes (company/contact not found, enrich miss) are empty results,
+// not system failures — surface them as a clean not-found, never a red error.
+const NO_DATA_RE = /^(no company for|no contact found|enrich miss)/i;
 
 type CachedRun = {
   lead: EnrichedLead;
@@ -224,7 +229,11 @@ export async function* runLive(query: string): AsyncGenerator<LiveEvent> {
       pngPath,
     });
 
-    console.info("[livegen]", { query, cached: false, ms: Date.now() - started });
+    console.info("[livegen]", {
+      query,
+      cached: false,
+      ms: Date.now() - started,
+    });
     yield {
       stage: "done",
       creativeId,
@@ -235,10 +244,12 @@ export async function* runLive(query: string): AsyncGenerator<LiveEvent> {
       cached: false,
     };
   } catch (e) {
-    yield {
-      stage: "error",
-      message: e instanceof Error ? e.message : "live-gen failed",
-    };
+    const message = e instanceof Error ? e.message : "live-gen failed";
+    if (NO_DATA_RE.test(message)) {
+      yield { stage: "notfound", query };
+    } else {
+      yield { stage: "error", message };
+    }
   }
 }
 

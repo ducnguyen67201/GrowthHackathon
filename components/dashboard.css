@@ -32,13 +32,46 @@
   margin: 0 0 var(--space-2);
 }
 
+/* At-a-glance pipeline summary — surfaces totals without making the user scan. */
+.dash-summary {
+  margin: 0 0 var(--space-2);
+  color: var(--color-text-dim);
+  font-size: var(--text-sm);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+
+.dash-summary strong {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-summary-sep {
+  color: var(--color-border);
+}
+
+.dash-summary-stat {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-summary-stat--danger {
+  color: var(--color-danger);
+}
+
 .dash-filters {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1);
+  margin-bottom: var(--space-2);
 }
 
 .filter-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   background: var(--color-surface);
   color: var(--color-text-dim);
   border: 1px solid var(--color-border);
@@ -52,6 +85,22 @@
     background var(--dur-fast) var(--ease);
 }
 
+.filter-count {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 1.1rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+  color: var(--color-text-dim);
+}
+
+.filter-tab[aria-pressed="true"] .filter-count {
+  background: color-mix(in oklch, var(--color-on-accent) 26%, transparent);
+  color: var(--color-on-accent);
+}
+
 .filter-tab:hover {
   color: var(--color-text);
   border-color: var(--color-text-dim);
@@ -63,7 +112,7 @@
 }
 
 .filter-tab[aria-pressed="true"] {
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   background: var(--color-accent);
   border-color: var(--color-accent);
   font-weight: 600;
@@ -80,6 +129,51 @@
   gap: var(--space-2);
 }
 
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  filter: brightness(1.12);
+}
+
+/* Loading placeholder — a friendlier "the grid is coming" than bare text. */
+.card-skeleton {
+  height: 320px;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  background: linear-gradient(
+    100deg,
+    var(--color-surface) 30%,
+    var(--color-surface-2) 50%,
+    var(--color-surface) 70%
+  );
+  background-size: 200% 100%;
+  animation: card-shimmer 1.4s var(--ease) infinite;
+}
+
+@keyframes card-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-skeleton {
+    animation: none;
+  }
+}
+
 /* ---- card ---- */
 .card {
   background: var(--color-surface);
@@ -89,14 +183,21 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  box-shadow: var(--shadow-card);
   transition:
     transform var(--dur-fast) var(--ease),
-    border-color var(--dur-fast) var(--ease);
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
 }
 
 .card:hover {
   transform: translateY(-2px);
-  border-color: var(--color-text-dim);
+  border-color: color-mix(
+    in oklch,
+    var(--color-accent) 35%,
+    var(--color-border)
+  );
+  box-shadow: var(--shadow-card-hover);
 }
 
 .card[data-status="approved"] {
@@ -151,6 +252,21 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.card-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+  flex: 0 0 auto;
+}
+
+.card-time {
+  font-size: 0.68rem;
+  color: var(--color-text-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .badge {
@@ -344,6 +460,20 @@
   margin-top: auto;
 }
 
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.card-send-error {
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+  max-width: 18ch;
+  text-align: right;
+  line-height: 1.2;
+}
+
 .sources {
   position: relative;
 }
@@ -377,7 +507,7 @@
   background: var(--color-surface-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  box-shadow: 0 12px 30px -12px oklch(0% 0 0 / 0.6);
+  box-shadow: var(--shadow-pop);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -399,7 +529,7 @@
 
 .approve {
   background: var(--color-accent);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   border: none;
   border-radius: var(--radius-sm);
   padding: 0.5rem 1.1rem;

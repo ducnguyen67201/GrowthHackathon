@@ -92,11 +92,92 @@
   outline-offset: 2px;
 }
 
-.live-stage {
-  color: var(--color-accent);
-  font-size: var(--text-sm);
-  letter-spacing: 0.04em;
+/* Staged progress — so a ~90s gen visibly advances through Discover → Reason → Render. */
+.live-progress {
   margin: 0 0 var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.live-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+  overflow: hidden;
+}
+
+.live-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-accent);
+  transition: width var(--dur) var(--ease);
+}
+
+/* moving sheen while a stage is in flight, so it never looks frozen */
+.live-progress-fill.is-working {
+  background-image: linear-gradient(
+    100deg,
+    var(--color-accent) 0%,
+    color-mix(in oklch, var(--color-on-accent) 45%, var(--color-accent)) 50%,
+    var(--color-accent) 100%
+  );
+  background-size: 200% 100%;
+  animation: live-progress-sheen 1.2s linear infinite;
+}
+
+@keyframes live-progress-sheen {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.live-progress-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
+.live-progress-step {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: var(--text-sm);
+  color: var(--color-text-dim);
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.live-progress-step.is-active {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.live-progress-step.is-done {
+  color: var(--color-text);
+}
+
+.live-progress-step.is-done::before {
+  content: "✓";
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.live-progress-caption {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-progress-fill.is-working {
+    animation: none;
+  }
 }
 
 .live-steps {
@@ -137,10 +218,53 @@
   }
 }
 
-.live-message {
-  color: var(--color-danger);
-  font-size: var(--text-sm);
+/* Two tones: a neutral empty-state (no data found) vs a real error. Never silent. */
+.live-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   margin: var(--space-1) 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+}
+
+.live-notice-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.live-notice--empty {
+  background: var(--color-surface);
+  border-style: dashed;
+  color: var(--color-text-dim);
+}
+
+.live-notice--empty .live-notice-icon {
+  background: var(--color-surface-2);
+  color: var(--color-text-dim);
+}
+
+.live-notice--error {
+  background: color-mix(in oklch, var(--color-danger) 8%, var(--color-surface));
+  border-color: color-mix(
+    in oklch,
+    var(--color-danger) 45%,
+    var(--color-border)
+  );
+  color: var(--color-text);
+}
+
+.live-notice--error .live-notice-icon {
+  background: var(--color-danger);
+  color: var(--color-on-accent);
 }
 
 .live-link {

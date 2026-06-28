@@ -5,6 +5,10 @@
    */
   "compilerOptions": {
     /* These settings are not required by Convex and can be modified. */
+    /* Match the root tsconfig's "@/*" alias so convex code that imports app
+       modules (e.g. lib/orangeslice -> @/lib/schemas) typechecks + deploys. */
+    "baseUrl": ".",
+    "paths": { "@/*": ["../*"] },
     "allowJs": true,
     "strict": true,
     "moduleResolution": "Bundler",
