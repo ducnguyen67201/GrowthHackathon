@@ -187,9 +187,10 @@ export type PersonHit = {
 
 export async function searchCompanies(q: string): Promise<CompanyHit[]> {
   // ponytail: keyword filter is the confident path; swap to textToCompanySearch for NL once shape verified.
+  // keywords is a typed filter object (containsAll/containsAny/containsNone), not a bare string. Confirmed via api.fiber.ai/ai-docs/companySearch.md.
   const resp = await post(
     "/v1/company-search",
-    { searchParams: { keywords: q } },
+    { searchParams: { keywords: { containsAny: [q] } } },
     companySearchResp,
   );
   return resp.output.data.map((c) => {
@@ -213,7 +214,7 @@ export async function findContact(
     "/v1/people-search",
     {
       searchParams: {
-        keywords: companyFiberIdOrName,
+        keywords: { containsAny: [companyFiberIdOrName] },
         jobTitleV2: { term: "growth OR sales OR founder OR marketing" },
       },
     },
@@ -264,37 +265,94 @@ export async function socialLookup(handleOrUrl: string): Promise<SocialPost[]> {
   const trig = await post(
     "/v1/social-media-lookup/trigger",
     {
-      person: { linkedinUrl: handleOrUrl },
+      person: { inputType: "linkedinUrl", linkedinUrl: handleOrUrl },
       platforms: ["TWITTER", "INSTAGRAM"],
     },
     socialTriggerResp,
   );
   const runId = trig.output.socialMediaFinderRunId;
-  const deadline = 8000;
+  const deadline = 10000;
   const start = performance.now();
+  // ponytail: the run isn't queryable instantly — wait before the first poll, and treat a transient
+  // 404 ("run not found") as not-ready-yet rather than fatal. Social is best-effort; degrade to [].
+  await new Promise((r) => setTimeout(r, 1500));
   while (performance.now() - start < deadline) {
-    const poll = await post(
-      "/v1/social-media-lookup/polling",
-      { socialMediaFinderRunId: runId, pageSize: 10 },
-      socialPollResp,
-    );
-    const status = poll.output.status;
-    if (status === "completed") {
-      const candidates =
-        poll.output.data?.flatMap((d) => d.candidates ?? []) ?? [];
-      return candidates
-        .filter((c) => c.bio || c.profileUrl)
-        .map((c) => ({
-          platform: c.platform ?? "social",
-          text: c.bio ?? c.displayName ?? "",
-          url: c.profileUrl ?? "",
-          postedAt: undefined,
-        }));
+    try {
+      const poll = await post(
+        "/v1/social-media-lookup/polling",
+        { socialMediaFinderRunId: runId, pageSize: 10 },
+        socialPollResp,
+      );
+      const status = poll.output.status;
+      if (status === "completed") {
+        const candidates =
+          poll.output.data?.flatMap((d) => d.candidates ?? []) ?? [];
+        return candidates
+          .filter((c) => c.bio || c.profileUrl)
+          .map((c) => ({
+            platform: c.platform ?? "social",
+            text: c.bio ?? c.displayName ?? "",
+            url: c.profileUrl ?? "",
+            postedAt: undefined,
+          }));
+      }
+      if (status === "failed") break;
+    } catch {
+      // not ready yet (or transient) — keep waiting until the deadline, then degrade
     }
-    if (status === "failed") break;
     await new Promise((r) => setTimeout(r, 1200));
   }
   return []; // degrade gracefully — the brain proceeds firmo-only
+}
+
+const linkedinPostsResp = z
+  .object({
+    output: z
+      .object({
+        data: z
+          .array(
+            z
+              .object({
+                caption: z.string().optional(),
+                postUrl: z.string().optional(),
+                postedAt: z
+                  .object({ noEarlierThan: z.string().optional() })
+                  .passthrough()
+                  .optional(),
+              })
+              .passthrough(),
+          )
+          .optional(),
+      })
+      .passthrough(),
+    chargeInfo: chargeV.optional(),
+  })
+  .passthrough();
+
+// Real recent LinkedIn posts (caption text + date + url) — the freshest signal the brain
+// anchors on. Uses the linkedinUrl/slug we already have, so no flaky handle-resolution.
+export async function fetchLinkedinPosts(
+  identifier: string,
+  limit = 5,
+): Promise<SocialPost[]> {
+  try {
+    const resp = await post(
+      "/v1/linkedin-live-fetch/profile-posts",
+      { identifier, cursor: null },
+      linkedinPostsResp,
+    );
+    return (resp.output.data ?? [])
+      .filter((p) => p.caption)
+      .slice(0, limit)
+      .map((p) => ({
+        platform: "linkedin",
+        text: p.caption ?? "",
+        url: p.postUrl ?? "",
+        postedAt: p.postedAt?.noEarlierThan,
+      }));
+  } catch {
+    return []; // best-effort — degrade to firmo-only
+  }
 }
 
 export async function revealEmail(
@@ -350,7 +408,7 @@ export async function discoverAndEnrich(query: string): Promise<EnrichedLead> {
   const [enriched, socialPosts, logoUrl] = await Promise.all([
     enrich(idForEnrich),
     person.linkedinUrl
-      ? socialLookup(person.linkedinUrl)
+      ? fetchLinkedinPosts(idForEnrich)
       : Promise.resolve<SocialPost[]>([]),
     company.domain ? getLogo(company.domain) : Promise.resolve(null),
   ]);
