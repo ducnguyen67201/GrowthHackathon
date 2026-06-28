@@ -16,6 +16,7 @@ import type * as creatives_write from "../creatives_write.js";
 import type * as ingest from "../ingest.js";
 import type * as people from "../people.js";
 import type * as replies from "../replies.js";
+import type * as runs from "../runs.js";
 import type * as schema from "../schema.js";
 import type * as seed from "../seed.js";
 import type * as sendEmail from "../sendEmail.js";
@@ -40,6 +41,7 @@ import type * as validators from "../validators.js";
 "ingest": typeof ingest,
 "people": typeof people,
 "replies": typeof replies,
+"runs": typeof runs,
 "schema": typeof schema,
 "seed": typeof seed,
 "sendEmail": typeof sendEmail,
