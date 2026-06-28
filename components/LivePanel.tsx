@@ -271,7 +271,7 @@ export function LivePanel({ compact = false }: LivePanelProps) {
     <>
       {!compact && (
         <header className="live-head">
-          <p className="dash-kicker">Cutthrough · Live</p>
+          <p className="dash-kicker">Tombstone · Live</p>
           <h1 className="dash-title">Re-trigger a deal you lost — live</h1>
           <p className="dash-sub">
             Name a deal you lost and why. Watch the brain read why it died, check

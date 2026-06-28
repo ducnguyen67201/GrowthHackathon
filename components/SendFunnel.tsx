@@ -32,6 +32,7 @@ export function SendFunnel({ title, creativeId, to, onClose }: Props) {
   const [phase, setPhase] = useState<"working" | "done" | "error">("working");
   const [error, setError] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [showVideo, setShowVideo] = useState(false);
 
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -172,14 +173,13 @@ export function SendFunnel({ title, creativeId, to, onClose }: Props) {
 
         {phase === "done" && videoUrl && (
           <footer className="funnel-foot">
-            <a
+            <button
+              type="button"
               className="funnel-close"
-              href={videoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              onClick={() => setShowVideo(true)}
             >
               ▶ View generated video
-            </a>
+            </button>
             <button
               type="button"
               className="funnel-close"
@@ -190,6 +190,36 @@ export function SendFunnel({ title, creativeId, to, onClose }: Props) {
           </footer>
         )}
       </div>
+
+      {showVideo && videoUrl && (
+        <div
+          className="vmodal"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Generated video"
+          onClick={() => setShowVideo(false)}
+        >
+          <div className="vmodal-box" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="vmodal-x"
+              aria-label="Close video"
+              onClick={() => setShowVideo(false)}
+            >
+              ×
+            </button>
+            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+            <video
+              className="vmodal-video"
+              src={videoUrl}
+              autoPlay
+              loop
+              controls
+              playsInline
+            />
+          </div>
+        </div>
+      )}
     </div>,
     document.body,
   );

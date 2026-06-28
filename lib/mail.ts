@@ -16,11 +16,25 @@ export function buildHtml(
   body: string,
   pixelUrl: string,
   pngUrl?: string,
+  videoUrl?: string,
 ): string {
   const text = escapeHtml(body).replace(/\n/g, "<br>");
-  const art = pngUrl
-    ? `<p><img src="${escapeHtml(pngUrl)}" alt="" style="max-width:520px;width:100%;border-radius:8px"></p>`
+  // Email clients can't autoplay mp4 — so the card image becomes a click-through to the
+  // hosted 7-second clip, with an explicit "watch" link beneath it. That's the unique touch.
+  const img = pngUrl
+    ? `<img src="${escapeHtml(pngUrl)}" alt="" style="max-width:520px;width:100%;border-radius:8px;display:block">`
     : "";
+  const watch = videoUrl
+    ? `<a href="${escapeHtml(videoUrl)}" style="display:inline-block;margin-top:8px;color:#0a7d4b;font-weight:600;text-decoration:none">▶ Watch the 7-second walkthrough</a>`
+    : "";
+  const art =
+    pngUrl && videoUrl
+      ? `<p><a href="${escapeHtml(videoUrl)}" style="text-decoration:none">${img}</a>${watch}</p>`
+      : pngUrl
+        ? `<p>${img}</p>`
+        : videoUrl
+          ? `<p>${watch}</p>`
+          : "";
   // ponytail: remote <img> for the pixel; Gmail proxies it, so opens log coarse
   // (once on first open). Switch to a CID attachment if per-open fidelity matters.
   const pixel = `<img src="${escapeHtml(pixelUrl)}" width="1" height="1" alt="" style="display:none">`;
@@ -51,14 +65,15 @@ export async function sendCreative(a: {
   subject: string;
   body: string;
   pngUrl?: string;
+  videoUrl?: string;
   pixelUrl: string;
 }): Promise<{ messageId: string }> {
   const info = await getTransport().sendMail({
     from: process.env.GMAIL_USER,
     to: a.to,
     subject: a.subject,
-    text: a.body,
-    html: buildHtml(a.body, a.pixelUrl, a.pngUrl),
+    text: a.videoUrl ? `${a.body}\n\n▶ Watch the 7-second walkthrough: ${a.videoUrl}` : a.body,
+    html: buildHtml(a.body, a.pixelUrl, a.pngUrl, a.videoUrl),
   });
   return { messageId: info.messageId };
 }

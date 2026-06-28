@@ -120,9 +120,28 @@ type TemplateInput = {
   company: string;
   name: string;
   title?: string;
+  firmo?: string; // "Healthcare · ~60 employees · Series B" — company context on the card
   anchorFact: string;
   quote: string | null;
 };
+
+// One-line company context from firmographics (Fiber, or seeded). Falls back to the domain so
+// the card never shows a bare name. Tolerant of key spellings (Fiber vs seed vs CRM).
+function firmoLine(lead: EnrichedLead): string | undefined {
+  const f = (lead.firmoSignals ?? {}) as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+  const num = (v: unknown) =>
+    typeof v === "number" ? v : typeof v === "string" && /^\d+$/.test(v) ? v : null;
+  const parts: string[] = [];
+  const industry = str(f.industry) ?? str(f.sector);
+  if (industry) parts.push(industry);
+  const emp = num(f.employees) ?? num(f.headcount) ?? num(f.employee_count);
+  if (emp) parts.push(`~${emp} employees`);
+  const funding = str(f.funding) ?? str(f.latest_funding) ?? str(f.stage);
+  if (funding) parts.push(funding);
+  if (!parts.length && lead.domain) parts.push(lead.domain);
+  return parts.length ? parts.join(" · ") : undefined;
+}
 
 function logoBadge(input: TemplateInput) {
   if (input.logo) {
@@ -181,6 +200,13 @@ function templateLight(input: TemplateInput) {
             {input.name}
             {input.title ? ` · ${input.title}` : ""}
           </div>
+          {input.firmo ? (
+            <div style={{ display: "flex", fontSize: 16, color: input.accent, marginTop: 4 }}>
+              {input.firmo}
+            </div>
+          ) : (
+            <div style={{ display: "flex" }} />
+          )}
         </div>
       </div>
 
@@ -223,7 +249,7 @@ function templateLight(input: TemplateInput) {
           }}
         />
         <div style={{ display: "flex", fontSize: 18, color: "#a8a29e" }}>
-          Cutthrough
+          Tombstone
         </div>
       </div>
     </div>
@@ -264,6 +290,13 @@ function templateDark(input: TemplateInput) {
               {input.name}
               {input.title ? ` · ${input.title}` : ""}
             </div>
+            {input.firmo ? (
+              <div style={{ display: "flex", fontSize: 16, color: input.accent, marginTop: 4 }}>
+                {input.firmo}
+              </div>
+            ) : (
+              <div style={{ display: "flex" }} />
+            )}
           </div>
         </div>
 
@@ -302,7 +335,7 @@ function templateDark(input: TemplateInput) {
             fontWeight: 600,
           }}
         >
-          Cutthrough
+          Tombstone
         </div>
       </div>
     </div>
@@ -408,7 +441,7 @@ function templateBackdrop(input: TemplateInput & { backdrop: string }) {
             }}
           />
           <div style={{ display: "flex", fontSize: 18, color: "#fafaf9" }}>
-            Cutthrough
+            Tombstone
           </div>
         </div>
       </div>
@@ -429,6 +462,7 @@ export async function renderArtifact(input: {
     company: lead.company,
     name: lead.name,
     title: lead.title,
+    firmo: firmoLine(lead),
     // anchorFact lives on ReasonResult, not Reasoning — accept it explicitly, fall back to the angle.
     anchorFact: input.anchorFact ?? reasoning.angle,
     quote: firstPostQuote(lead),

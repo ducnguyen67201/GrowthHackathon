@@ -11,6 +11,13 @@ export type FlowStep = {
 
 export const FLOW: FlowStep[] = [
   {
+    href: "/intake",
+    label: "Call In",
+    step: "Talk",
+    hint: "A call just ended — drop the transcript, the system studies it",
+    cta: "Drop a call you just had",
+  },
+  {
     href: "/signals",
     label: "Dead Pipeline",
     step: "Graveyard",

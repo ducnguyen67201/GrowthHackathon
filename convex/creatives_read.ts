@@ -25,15 +25,34 @@ export const list = query({
           .collect()
       : await ctx.db.query("creatives").order("desc").collect();
 
+    // The dead deal carries the call transcript + objection. Most cold-path brain
+    // creatives have no (or a stale, post-wipe) lostDealId, so fall back to matching
+    // a lost deal by account name — that's what surfaces the transcript in the
+    // pre-send review and the prep chat's context.
+    // ponytail: account-name match — fine while accounts are unique; key on a real
+    // company id if names ever collide.
+    const lostByAccount = new Map(
+      (await ctx.db.query("lostDeals").collect()).map((d) => [
+        d.account.toLowerCase(),
+        d,
+      ]),
+    );
+
     return Promise.all(
-      rows.map(async (c) => ({
-        ...c,
-        company: await ctx.db.get(c.companyId),
-        person: await ctx.db.get(c.personId),
-        artifactUrl: c.artifactStorageId
-          ? await ctx.storage.getUrl(c.artifactStorageId)
-          : null,
-      })),
+      rows.map(async (c) => {
+        const company = await ctx.db.get(c.companyId);
+        const linked = c.lostDealId ? await ctx.db.get(c.lostDealId) : null;
+        return {
+          ...c,
+          company,
+          person: await ctx.db.get(c.personId),
+          lostDeal:
+            linked ?? lostByAccount.get((company?.name ?? "").toLowerCase()) ?? null,
+          artifactUrl: c.artifactStorageId
+            ? await ctx.storage.getUrl(c.artifactStorageId)
+            : null,
+        };
+      }),
     );
   },
 });
@@ -45,10 +64,20 @@ export const get = query({
   handler: async (ctx, { id }) => {
     const c = await ctx.db.get(id);
     if (!c) return null;
+    const company = await ctx.db.get(c.companyId);
+    let lostDeal = c.lostDealId ? await ctx.db.get(c.lostDealId) : null;
+    if (!lostDeal && company) {
+      lostDeal =
+        (await ctx.db
+          .query("lostDeals")
+          .filter((q) => q.eq(q.field("account"), company.name))
+          .first()) ?? null;
+    }
     return {
       ...c,
-      company: await ctx.db.get(c.companyId),
+      company,
       person: await ctx.db.get(c.personId),
+      lostDeal,
     };
   },
 });

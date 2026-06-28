@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import type { Reasoning } from "@/convex/validators";
 import { SendFunnel } from "./SendFunnel";
+import { SendReview, type ReviewDraft, type ReviewFact } from "./SendReview";
 import "./retrigger-board.css";
 
 // The case file behind a re-trigger score — the deal's death reconstructed and reversed:
@@ -139,9 +140,11 @@ export function CaseFile({ item, compact = false }: { item: BoardItem; compact?:
   const hasCopy = item.copyVariants.length > 0;
   const initial = item.contact.trim().charAt(0).toUpperCase() || "?";
   // item._id IS the creative id — fire the same streamed pipeline LiveScore uses.
+  const [reviewing, setReviewing] = useState(false);
   const [sending, setSending] = useState(false);
   const [busy, setBusy] = useState(false);
   const approve = useMutation(api.creatives_read.approve);
+  const editCopy = useMutation(api.creatives_read.editCopy);
 
   // Recipient picker — blank = simulate (dry-run); a real address = actually deliver to it.
   // Persisted so you only type your test inbox once.
@@ -160,18 +163,53 @@ export function CaseFile({ item, compact = false }: { item: BoardItem; compact?:
   }
   const recipient = to.includes("@") ? to.trim() : undefined;
 
-  // The case file IS the review — Send approves the draft, then opens the send funnel.
-  // approve runs first; any failure surfaces visibly in the funnel's send stage.
-  async function handleSend() {
+  // "Send →" opens the pre-send review (intel + strategy → editable confirm). Its
+  // "Send now" calls handleSend with the (maybe-edited) draft: persist any edit,
+  // approve, then open the funnel. The send pipeline ships copyVariants[0] here.
+  // ponytail: edits index 0 — board re-trigger creatives default chosenCopyIndex to 0.
+  async function handleSend(edited: ReviewDraft) {
     if (busy || sending) return;
     setBusy(true);
     try {
+      const orig = item.copyVariants[0];
+      if (orig && (edited.subject !== orig.subject || edited.body !== orig.body)) {
+        await editCopy({
+          id: item._id as Id<"creatives">,
+          index: 0,
+          subject: edited.subject,
+          body: edited.body,
+        });
+      }
       await approve({ id: item._id as Id<"creatives"> });
     } finally {
       setBusy(false);
+      setReviewing(false);
       setSending(true);
     }
   }
+
+  const reviewFacts: ReviewFact[] = [
+    { k: "Account", v: item.account },
+    { k: "Contact", v: item.contact },
+    ...(item.value != null
+      ? [{ k: "Deal value", v: `$${item.value.toLocaleString()}` }]
+      : []),
+    ...(item.lostDate ? [{ k: "Lost", v: fmtDate(item.lostDate) }] : []),
+    ...(item.objection ? [{ k: "Why it died", v: item.objection }] : []),
+    ...(item.fixFeature
+      ? [
+          {
+            k: "What changed",
+            v: item.fixSolves
+              ? `Shipped ${item.fixFeature} — ${item.fixSolves}`
+              : `Shipped ${item.fixFeature}`,
+          },
+        ]
+      : []),
+    ...(item.externalSignal
+      ? [{ k: "Fresh signal", v: item.externalSignal }]
+      : []),
+  ];
 
   return (
     <div className="rt-drill-body">
@@ -267,15 +305,34 @@ export function CaseFile({ item, compact = false }: { item: BoardItem; compact?:
                 <button
                   type="button"
                   className="rt-mail-send"
-                  onClick={handleSend}
+                  onClick={() => setReviewing(true)}
                   disabled={busy || sending}
                 >
-                  {busy ? "Approving…" : sending ? "Sending…" : "Send →"}
+                  {busy ? "Approving…" : sending ? "Sending…" : "Review & send →"}
                 </button>
               </footer>
             </article>
           ))}
         </section>
+      )}
+
+      {reviewing && (
+        <SendReview
+          reasoning={item.reasoning}
+          anchorFact={item.anchorFact}
+          facts={reviewFacts}
+          draft={item.copyVariants[0]}
+          toLabel={item.contact}
+          recipient={recipient}
+          pending={busy || sending}
+          briefTitle={`What we have on ${item.account}`}
+          transcript={item.transcript ?? undefined}
+          transcriptDate={
+            item.transcriptDate ? fmtDate(item.transcriptDate) : undefined
+          }
+          onConfirm={handleSend}
+          onClose={() => setReviewing(false)}
+        />
       )}
 
       {sending && (
