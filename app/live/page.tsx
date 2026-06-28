@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { ReasoningChain } from "@/components/ReasoningChain";
+import { Card } from "@/components/Card";
+import type { CreativeCard } from "@/components/types";
 import type { Reasoning } from "@/lib/schemas";
 import type { LiveEvent } from "@/lib/livegen";
 import "@/components/dashboard.css"; // reuse .reasoning* + .card-artifact styling
@@ -25,6 +29,8 @@ const STAGE_TEXT: Record<string, string> = {
   rendering: "Rendering the card…",
 };
 
+const EXAMPLES = ["Vercel", "Stripe", "Linear", "Notion"];
+
 export default function LivePage() {
   const [query, setQuery] = useState("");
   const [running, setRunning] = useState(false);
@@ -36,6 +42,12 @@ export default function LivePage() {
   const [anchorFact, setAnchorFact] = useState("");
   const [creativeId, setCreativeId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  // Every live run is persisted to Convex (see lib/livegen persist()). Subscribe to
+  // the newest few so this page survives a refresh instead of looking empty.
+  const recent = useQuery(api.creatives_read.list, {}) as
+    | CreativeCard[]
+    | undefined;
 
   function handle(ev: LiveEvent) {
     if ("step" in ev) {
@@ -123,7 +135,7 @@ export default function LivePage() {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="e.g. Vercel"
+          placeholder="Type a company name…"
           autoComplete="off"
           aria-label="Company"
         />
@@ -135,6 +147,22 @@ export default function LivePage() {
           {running ? "Running…" : "Run"}
         </button>
       </form>
+
+      {!running && !reasoning && !stage && (
+        <div className="live-examples">
+          <span className="live-examples-label">Try</span>
+          {EXAMPLES.map((ex) => (
+            <button
+              key={ex}
+              type="button"
+              className="live-example"
+              onClick={() => setQuery(ex)}
+            >
+              {ex}
+            </button>
+          ))}
+        </div>
+      )}
 
       {stage && (
         <p className="live-stage" role="status">
@@ -176,6 +204,21 @@ export default function LivePage() {
         <a className="live-link" href="/">
           ↗ See it in the Pipeline
         </a>
+      )}
+
+      {recent && recent.length > 0 && (
+        <section className="live-recent">
+          <h2 className="live-recent-title">Recent runs</h2>
+          <p className="live-recent-sub">
+            Saved automatically — these survive a refresh. Full history under{" "}
+            <a href="/">Pipeline</a>.
+          </p>
+          <div className="dash-grid">
+            {recent.slice(0, 6).map((c) => (
+              <Card key={c._id} creative={c} />
+            ))}
+          </div>
+        </section>
       )}
     </main>
   );
