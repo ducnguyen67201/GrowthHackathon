@@ -11,6 +11,7 @@
   import type { ApiFromModules, FilterApi, FunctionReference } from "convex/server";
   import type * as companies from "../companies.js";
 import type * as creatives_read from "../creatives_read.js";
+import type * as creatives_video from "../creatives_video.js";
 import type * as creatives_write from "../creatives_write.js";
 import type * as ingest from "../ingest.js";
 import type * as people from "../people.js";
@@ -34,6 +35,7 @@ import type * as validators from "../validators.js";
   declare const fullApi: ApiFromModules<{
     "companies": typeof companies,
 "creatives_read": typeof creatives_read,
+"creatives_video": typeof creatives_video,
 "creatives_write": typeof creatives_write,
 "ingest": typeof ingest,
 "people": typeof people,
