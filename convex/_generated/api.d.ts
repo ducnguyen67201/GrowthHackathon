@@ -17,8 +17,10 @@ import type * as people from "../people.js";
 import type * as replies from "../replies.js";
 import type * as schema from "../schema.js";
 import type * as seed from "../seed.js";
+import type * as sendEmail from "../sendEmail.js";
 import type * as sends from "../sends.js";
 import type * as tracker from "../tracker.js";
+import type * as tracker_rules from "../tracker_rules.js";
 import type * as validators from "../validators.js";
 
   /**
@@ -38,8 +40,10 @@ import type * as validators from "../validators.js";
 "replies": typeof replies,
 "schema": typeof schema,
 "seed": typeof seed,
+"sendEmail": typeof sendEmail,
 "sends": typeof sends,
 "tracker": typeof tracker,
+"tracker_rules": typeof tracker_rules,
 "validators": typeof validators,
   }>;
   export declare const api: FilterApi<typeof fullApi, FunctionReference<any, "public">>;
