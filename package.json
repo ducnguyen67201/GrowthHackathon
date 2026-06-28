@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "smoke:fiber": "tsx scripts/smoke-fiber.ts",
     "smoke:brain": "tsx scripts/smoke-brain.ts",
+    "smoke:send": "tsx scripts/smoke-send.ts",
     "coverage": "tsx scripts/coverage.ts"
   },
   "dependencies": {
@@ -36,6 +37,10 @@
     "tsx": "^4.19.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "sharp", "@resvg/resvg-js"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "@resvg/resvg-js"
+    ]
   }
 }
