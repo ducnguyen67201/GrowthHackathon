@@ -6,6 +6,7 @@ import type { Doc } from "@/convex/_generated/dataModel";
 export type CreativeCard = Doc<"creatives"> & {
   company: Doc<"companies"> | null;
   person: Doc<"people"> | null;
+  lostDeal: Doc<"lostDeals"> | null;
   artifactUrl: string | null;
 };
 

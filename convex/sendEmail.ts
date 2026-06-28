@@ -10,10 +10,14 @@ import { execute as orangeSliceExecute } from "../lib/orangeslice";
 // load creative -> [Orange Slice execute | Gmail fallback] -> stamp messageId + status.
 // Lives apart from sends.ts because a "use node" module can't hold mutations.
 export const send = action({
-  args: { creativeId: v.id("creatives"), to: v.optional(v.string()) },
+  args: {
+    creativeId: v.id("creatives"),
+    to: v.optional(v.string()),
+    videoUrl: v.optional(v.string()), // hosted 7s clip — linked in the email when present
+  },
   handler: async (
     ctx,
-    { creativeId, to: toArg },
+    { creativeId, to: toArg, videoUrl },
   ): Promise<{ sendId: string; messageId: string; channel: string }> => {
     const payload = await ctx.runQuery(api.sends.getForSend, { creativeId });
 
@@ -82,6 +86,7 @@ export const send = action({
       subject: payload.subject,
       body: payload.body,
       pngUrl: payload.pngUrl,
+      videoUrl,
       pixelUrl: `${base.replace(/\/$/, "")}/pixel/${sendId}`,
     });
 

@@ -129,11 +129,15 @@ export async function* runSend(
       yield { stage: "video", skipped: true };
     }
 
-    // Real delivery (Orange Slice → Gmail, open-pixel, status flip).
+    // Real delivery (Orange Slice → Gmail, open-pixel, status flip). When a clip was rendered,
+    // pass its absolute URL so the email links the 7s walkthrough (the unique touch).
     yield { stage: "sending" };
+    const base = (process.env.APP_BASE_URL ?? "").replace(/\/$/, "");
+    const absVideoUrl = videoUrl && base ? `${base}${videoUrl}` : undefined;
     const res = await client.action(api.sendEmail.send, {
       creativeId: c._id,
       ...(to ? { to } : {}),
+      ...(absVideoUrl ? { videoUrl: absVideoUrl } : {}),
     });
 
     yield {

@@ -1,4 +1,5 @@
 import { AgentActivity } from "@/components/AgentActivity";
+import { RecoveryBand } from "@/components/RecoveryBand";
 import { RegulatoryRadar } from "@/components/RegulatoryRadar";
 import { RetriggerBoard } from "@/components/RetriggerBoard";
 import { BrainGraph } from "@/components/BrainGraph";
@@ -27,10 +28,25 @@ export default function Home() {
   }
 
   return (
-    <main className="cockpit" aria-label="Cutthrough mission control">
+    <main className="cockpit" aria-label="Tombstone mission control">
       <div className="cockpit-agent">
         <AgentActivity />
       </div>
+
+      <section className="panel panel--recovery" aria-labelledby="ck-recovery">
+        <header className="panel-head">
+          <div className="panel-head-text">
+            <span className="panel-eyebrow">Recovery</span>
+            <h2 className="panel-title" id="ck-recovery">
+              How we win the money back
+            </h2>
+          </div>
+          <span className="panel-tag">expected $ recovered</span>
+        </header>
+        <div className="panel-body">
+          <RecoveryBand />
+        </div>
+      </section>
 
       <section className="panel panel--radar" aria-labelledby="ck-radar">
         <header className="panel-head">

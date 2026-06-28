@@ -7,6 +7,7 @@ import type { CreativeCard } from "./types";
 import { ReasoningChain } from "./ReasoningChain";
 import { SourcesPopover } from "./SourcesPopover";
 import { SendFunnel } from "./SendFunnel";
+import { SendReview, type ReviewDraft, type ReviewFact } from "./SendReview";
 
 type Props = {
   creative: CreativeCard;
@@ -33,8 +34,10 @@ function timeAgo(ms: number): string {
 export function Card({ creative }: Props) {
   const approve = useMutation(api.creatives_read.approve);
   const pickVariant = useMutation(api.creatives_read.pickVariant);
+  const editCopy = useMutation(api.creatives_read.editCopy);
 
   const [sending, setSending] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const [approving, setApproving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -60,14 +63,75 @@ export function Card({ creative }: Props) {
   }
 
   function onSend() {
-    if (sending) return;
-    // Open the funnel; it runs the real send (runSend) and animates the stages.
+    if (sending || reviewing) return;
+    // Open the pre-send review first; its "Send now" runs the real funnel.
     setActionError(null);
+    setReviewing(true);
+  }
+
+  // Review "Send now": persist any inline edit, then open the funnel.
+  async function handleConfirm(edited: ReviewDraft) {
+    if (sending) return;
+    const orig = creative.copyVariants[activeIndex];
+    try {
+      if (
+        orig &&
+        (edited.subject !== orig.subject || edited.body !== orig.body)
+      ) {
+        await editCopy({
+          id: creative._id,
+          index: activeIndex,
+          subject: edited.subject,
+          body: edited.body,
+        });
+      }
+    } catch (e: unknown) {
+      setActionError(e instanceof Error ? e.message : "Save failed");
+      return;
+    }
+    setReviewing(false);
     setSending(true);
   }
 
+  const lost = creative.lostDeal;
+  const reviewFacts: ReviewFact[] = [
+    ...(company?.name ? [{ k: "Company", v: company.name }] : []),
+    {
+      k: "Contact",
+      v: person
+        ? `${person.name}${person.title ? ` · ${person.title}` : ""}`
+        : "—",
+    },
+    ...(person?.email ? [{ k: "Email", v: person.email }] : []),
+    ...(company?.domain ? [{ k: "Domain", v: company.domain }] : []),
+    ...(lost?.value != null
+      ? [{ k: "Deal value", v: `$${lost.value.toLocaleString()}` }]
+      : []),
+    ...(lost?.objection || lost?.lostReason
+      ? [{ k: "Why it died", v: lost.objection ?? lost.lostReason }]
+      : []),
+    ...(creative.externalSignal
+      ? [{ k: "Signal", v: creative.externalSignal }]
+      : []),
+  ];
+
   return (
     <article className="card" data-status={creative.status}>
+      {reviewing && (
+        <SendReview
+          reasoning={creative.reasoning}
+          anchorFact={creative.anchorFact}
+          facts={reviewFacts}
+          draft={creative.copyVariants[activeIndex]}
+          toLabel={person?.name ?? company?.name ?? "lead"}
+          pending={sending}
+          briefTitle={`What we have on ${company?.name ?? "this lead"}`}
+          transcript={lost?.transcript ?? undefined}
+          transcriptDate={lost?.transcriptDate ?? undefined}
+          onConfirm={handleConfirm}
+          onClose={() => setReviewing(false)}
+        />
+      )}
       {sending && (
         <SendFunnel
           title={`Sending to ${company?.name ?? "lead"}`}
@@ -160,8 +224,22 @@ export function Card({ creative }: Props) {
             </span>
           )}
           {creative.status === "sent" ? (
-            <button type="button" className="approve" disabled>
-              Sent ✓
+            // Already sent, but re-sendable — handy for testing the send path repeatedly.
+            <button
+              type="button"
+              className="approve is-resend"
+              disabled={sending}
+              onClick={onSend}
+              title="Send this again (re-runs the real send)"
+            >
+              {sending ? (
+                <>
+                  <span className="spinner" aria-hidden />
+                  Sending…
+                </>
+              ) : (
+                "Sent ✓ · Send again"
+              )}
             </button>
           ) : creative.status === "approved" ? (
             <button

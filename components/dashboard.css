@@ -556,6 +556,17 @@
   cursor: default;
 }
 
+/* Re-send: already sent, but available again for testing — outline, not a filled primary. */
+.approve.is-resend:not(:disabled) {
+  background: transparent;
+  color: var(--color-accent);
+  border: 1px solid color-mix(in oklch, var(--color-accent) 45%, var(--color-border));
+}
+
+.approve.is-resend:not(:disabled):hover {
+  background: color-mix(in oklch, var(--color-accent) 10%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card,
   .approve,

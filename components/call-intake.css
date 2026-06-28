@@ -1,0 +1,403 @@
+/* Call intake — the front door of the loop. References tokens (styles/tokens.css). */
+
+.intake {
+  box-sizing: border-box;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(1.2rem, 0.6rem + 2vw, 2.6rem) var(--space-2) var(--space-4);
+}
+
+.intake-head {
+  max-width: 60ch;
+  margin-bottom: var(--space-3);
+}
+.intake-kicker {
+  margin: 0 0 0.5rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.intake-title {
+  margin: 0 0 0.6rem;
+  font-size: var(--text-xl);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+.intake-sub {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: 1.5;
+  color: var(--color-text-dim);
+}
+
+/* ---- where calls come from: connected recorders ---- */
+.intake-sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: var(--cgap, 1rem);
+  padding: 0.85rem 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+.intake-sources-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.intake-sources-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+.intake-sources-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--text-sm);
+  color: var(--color-text-dim);
+}
+.intake-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-accent) 60%, transparent);
+  animation: intake-pulse 1.8s var(--ease) infinite;
+}
+@keyframes intake-pulse {
+  0% {
+    box-shadow: 0 0 0 0
+      color-mix(in oklch, var(--color-accent) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intake-live-dot {
+    animation: none;
+  }
+}
+
+.intake-providers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.intake-provider {
+  --brand: oklch(60% 0.15 var(--hue, 250));
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.7rem 0.4rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+.intake-provider:hover:not(:disabled) {
+  border-color: var(--brand);
+  transform: translateY(-1px);
+}
+.intake-provider:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.intake-provider-mark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-on-accent);
+  background: var(--brand);
+}
+.intake-provider-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.intake-provider-state {
+  font-size: var(--text-sm);
+  color: var(--color-text-dim);
+}
+.intake-provider.is-on {
+  border-color: var(--brand);
+  background: color-mix(in oklch, var(--brand) 12%, var(--color-surface));
+}
+.intake-provider.is-on .intake-provider-state {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+/* ---- a call syncing in from a connected recorder ---- */
+.intake-incoming {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-accent);
+  background: color-mix(
+    in oklch,
+    var(--color-accent) 10%,
+    var(--color-surface)
+  );
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.intake-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: var(--cgap, 1rem);
+  align-items: start;
+}
+@media (max-width: 820px) {
+  .intake-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.intake-left,
+.intake-right {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-2);
+}
+
+/* ---- sample chips ---- */
+.intake-samples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+.intake-samples-label {
+  width: 100%;
+  font-size: var(--text-sm);
+  color: var(--color-text-dim);
+}
+.intake-chip {
+  font: inherit;
+  font-size: var(--text-sm);
+  padding: 0.34rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease);
+}
+.intake-chip:hover:not(:disabled) {
+  border-color: var(--color-accent-soft);
+}
+.intake-chip.is-on {
+  border-color: var(--color-accent);
+  background: color-mix(
+    in oklch,
+    var(--color-accent) 12%,
+    var(--color-surface)
+  );
+  color: var(--color-accent);
+  font-weight: 600;
+}
+.intake-chip:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.intake-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-bottom: 0.7rem;
+  font-size: var(--text-sm);
+  color: var(--color-text-dim);
+}
+.intake-meta strong {
+  color: var(--color-text);
+}
+.intake-signal {
+  color: var(--color-accent-2);
+  font-weight: 600;
+}
+
+.intake-transcript {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--color-text);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 0.9rem;
+  margin-bottom: 0.85rem;
+}
+.intake-transcript:focus-visible {
+  outline: 2px solid var(--color-accent-soft);
+  outline-offset: 1px;
+}
+
+.intake-go {
+  font: inherit;
+  font-weight: 600;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  cursor: pointer;
+  transition:
+    filter var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+.intake-go:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.intake-go:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.intake-go:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.intake-error {
+  margin: 0.6rem 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}
+
+/* ---- the study, revealed step by step ---- */
+.intake-steps {
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+.intake-step {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  opacity: 0.4;
+  transform: translateY(2px);
+  transition:
+    opacity var(--dur) var(--ease),
+    transform var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+.intake-step.is-on {
+  opacity: 1;
+  transform: none;
+  border-color: var(--color-accent-soft);
+}
+.intake-step-k {
+  font-size: var(--text-sm);
+  color: var(--color-text-dim);
+}
+.intake-step-v {
+  font-size: var(--text-base);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+.intake-step-v--obj {
+  font-weight: 700;
+  color: var(--color-danger);
+}
+
+/* ---- verdict ---- */
+.intake-verdict {
+  padding: var(--space-2);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  margin-bottom: var(--space-2);
+}
+.intake-verdict.is-ripe {
+  border-color: var(--color-accent);
+  background: color-mix(in oklch, var(--color-accent) 9%, var(--color-surface));
+}
+.intake-verdict.is-dead {
+  border-color: color-mix(
+    in oklch,
+    var(--color-text-dim) 40%,
+    var(--color-border)
+  );
+  background: var(--color-surface-2);
+}
+.intake-verdict-head {
+  margin: 0 0 0.35rem;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.is-ripe .intake-verdict-head {
+  color: var(--color-accent);
+}
+.is-dead .intake-verdict-head {
+  color: var(--color-text-dim);
+}
+.intake-verdict-body {
+  margin: 0 0 0.7rem;
+  font-size: var(--text-base);
+  line-height: 1.45;
+  color: var(--color-text);
+}
+.intake-cta {
+  display: inline-block;
+  font-weight: 600;
+  font-size: var(--text-base);
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.intake-cta:hover {
+  text-decoration: underline;
+}
+
+/* ---- live totals strip ---- */
+.intake-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.2rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  color: var(--color-text-dim);
+}
+.intake-counts b {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}

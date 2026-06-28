@@ -44,9 +44,11 @@ function firstPostQuote(lead: EnrichedLead): string | undefined {
   return t.length > 160 ? `${t.slice(0, 157)}…` : t;
 }
 
-// 2-sentence script: name + the exact situation. Capped to fit the fixed 8s composition.
+// Punchy 1-liner sized for the 7s composition — first name + the exact situation. The company
+// name is already on-screen, so we drop it from the read to keep the audio inside 7s.
 function voiceoverScript(lead: EnrichedLead, fact: string): string {
-  return `${lead.name} at ${lead.company} — ${fact}. Worth a look?`;
+  const first = lead.name.split(/\s+/).filter((w) => !/^(dr|mr|mrs|ms|prof)\.?$/i.test(w))[0] ?? lead.name;
+  return `${first} — ${fact} Worth a look?`;
 }
 
 async function speak(script: string): Promise<string> {

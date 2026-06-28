@@ -20,7 +20,7 @@ export function FlowNext({ current }: { current: string }) {
           <span className="flow-next-num" aria-hidden>
             ↻
           </span>
-          Back to the Dead Pipeline
+          Back to the start
           <span className="flow-next-arrow" aria-hidden>
             →
           </span>

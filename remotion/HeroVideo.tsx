@@ -15,7 +15,7 @@ import {
 // real headless Chromium, so a remote logo URL fetches fine (monogram fallback still kept).
 
 export const HERO_FPS = 30;
-export const HERO_DURATION = 240; // ponytail: fixed 8s; voiceover capped to 2 sentences to fit.
+export const HERO_DURATION = 210; // 7s at 30fps; voiceover capped to 2 sentences to fit.
 export const HERO_WIDTH = 1200;
 export const HERO_HEIGHT = 630;
 
@@ -161,7 +161,7 @@ export function HeroVideo(props: HeroVideoProps) {
       )}
 
       <div style={{ fontSize: 20, color: accent, fontWeight: 600 }}>
-        Cutthrough
+        Tombstone
       </div>
     </AbsoluteFill>
   );

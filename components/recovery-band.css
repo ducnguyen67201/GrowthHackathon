@@ -1,0 +1,114 @@
+/* The cockpit Recovery band — the money headline. Compact (lives in an auto-height grid row),
+   big tabular numbers, a re-winnable progress bar, and the single best win callout. */
+
+.rec {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.9rem, 0.4rem + 1.6vw, 2rem);
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.rec-stats {
+  display: flex;
+  gap: clamp(0.9rem, 0.4rem + 1.4vw, 2rem);
+  flex: none;
+}
+
+.rec-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  line-height: 1.05;
+}
+
+.rec-stat-value {
+  font-size: clamp(1.3rem, 1rem + 1.1vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.rec-stat-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  white-space: nowrap;
+}
+
+.rec-stat--accent .rec-stat-value {
+  color: var(--color-accent);
+}
+
+.rec-stat--dim .rec-stat-value {
+  color: var(--color-text-dim);
+}
+
+/* progress: re-winnable share of the dead pipeline */
+.rec-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1 1 180px;
+  min-width: 160px;
+}
+
+.rec-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+  overflow: hidden;
+}
+
+.rec-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklch, var(--color-accent) 70%, var(--color-surface)),
+    var(--color-accent)
+  );
+  transition: width var(--dur) var(--ease);
+}
+
+.rec-bar-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-dim);
+}
+
+.rec-bar-label strong {
+  color: var(--color-accent);
+}
+
+/* the single best "how we win it" callout */
+.rec-top {
+  flex: 1 1 280px;
+  min-width: 220px;
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  color: var(--color-text);
+}
+
+.rec-top-tag {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-bottom: 0.2rem;
+}
+
+.rec-top em {
+  font-style: italic;
+  color: var(--color-text);
+}
+
+@media (max-width: 1100px) {
+  .rec-top {
+    display: none; /* keep the band to numbers + bar when the cockpit gets tight */
+  }
+}

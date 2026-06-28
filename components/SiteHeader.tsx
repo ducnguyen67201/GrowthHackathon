@@ -15,11 +15,11 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="site-header-inner">
-        <Link href="/" className="site-brand" aria-label="Cutthrough home">
+        <Link href="/" className="site-brand" aria-label="Tombstone home">
           <span className="site-brand-mark" aria-hidden>
-            ◓
+            †
           </span>
-          <span className="site-brand-name">Cutthrough</span>
+          <span className="site-brand-name">Tombstone</span>
           <span className="site-brand-tag">AI SDR</span>
         </Link>
 

@@ -4,9 +4,9 @@ import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Cutthrough — AI SDR",
+  title: "Tombstone — AI SDR",
   description:
-    "An AI SDR that figures out what a prospect cares about right now, and proves it.",
+    "Your closed-lost deals aren't gone — they're tombstoned. Tombstone revives dead pipeline the moment the world changes in your favor.",
 };
 
 export default function RootLayout({

@@ -27,7 +27,7 @@ export type Moment = {
 
 type Turn = { speaker: string; line: string; isRep: boolean };
 
-const REP_SPEAKERS = new Set(["rep", "sales", "ae", "us", "cutthrough"]);
+const REP_SPEAKERS = new Set(["rep", "sales", "ae", "us", "tombstone"]);
 const STOP = new Set(["no", "not", "a", "the", "our", "for", "without", "missing", "wont", "cant", "ii"]);
 
 // What to bring to the re-open, keyed to the objection category. Generic fallback otherwise.

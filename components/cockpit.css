@@ -16,12 +16,22 @@
   display: grid;
   gap: var(--cgap);
   grid-template-columns: 1.32fr 1.16fr 1.04fr;
-  grid-template-rows: auto minmax(0, 1.06fr) minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1.06fr) minmax(0, 1fr) auto;
   grid-template-areas:
     "agent agent agent"
+    "recov recov recov"
     "radar board live"
     "brain board live"
     "pipe  pipe  pipe";
+}
+
+.panel--recovery {
+  grid-area: recov;
+}
+
+/* the recovery band is content-height; keep its body from forcing a scrollbar */
+.panel--recovery .panel-body {
+  overflow: visible;
 }
 
 /* belt-and-braces: the cockpit route never lets the page itself scroll */
