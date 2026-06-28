@@ -187,6 +187,7 @@ A growth judge (operator + founder) scores on weighted axes. Spend hours where t
 | **★ Reply Cyborg ★** | OpenAI | Read inbound reply + original thread/context → draft the contextual next message or booking ask. | `{draftReply, intent, suggestedAction}` |
 | **Cyborg dashboard** | Next.js + Convex RT | Pipeline of accounts; per-card **reasoning chain**, artifact, copy, approve; reply inbox with AI drafts; live-gen box. | the demo surface |
 | **Sender** | nodemailer + Gmail app password | Send approved creative. Embed open pixel. | `send` row, message-id |
+| **★ Orange Slice harness ★** | their package / MCP (confirm in Slack) | **Execution layer.** `execute(approvedCard)` → multichannel send (email/DM/call) as GTM code; `enrichFallback` waterfalls contacts when Fiber misses. Behind `lib/orangeslice.ts`. | `{channel, status, providerLog}` |
 | **Tracker** | Next pixel route + IMAP poll | Log opens; poll inbox, match replies by sender → trigger Reply Cyborg. | open/reply timestamps |
 | **Batch runner** | Node script | Overnight: real ICP companies through the full loop (incl. social **batch** lookup), parallelized + cached + rate-limited. | the coverage pipeline |
 | **Live-gen route** | Next API route | "name any company" → full loop with **reasoning streamed** → ~60–90s finished card. Pre-warmed + cached backups. | the interactive WOW |
@@ -238,6 +239,7 @@ Artifacts live in **Convex file storage** (`ctx.storage`), referenced by `artifa
 | Sora 2 *(optional)* | `sora-2` ($0.10/s 720p), `sora-2-pro` ($0.30–0.50/s); 4/8/12s | **Optional cinematic backdrop for the ONE hero video, PRE-RENDERED** (too slow/uncertain for live). Specifics still overlaid via Remotion. Can't render logos/text — don't try. |
 | Convex | files + real-time queries | `ctx.storage.store()` for artifacts (PNG + MP4); `useQuery` auto-subscribes |
 | Gmail send | nodemailer + **app password** | Skip OAuth — app password is the lazy path; low volume avoids spam flags |
+| **Orange Slice** | their **coding-agent package / MCP** (confirm in their Slack at H0) — bundles many enrichment providers + a sales-agent harness | **The execution layer.** `enrichFallback(person)` when Fiber misses a contact; `execute(approvedCard)` ships approved outreach multichannel (email/DM/call) as GTM code. Wrap behind `lib/orangeslice.ts`; surface its cost like Fiber `chargeInfo`. |
 
 GOTCHA log:
 - `KEY_INSIGHT:` social lookup is **async** (trigger → poll/webhook) → **APPLIES_TO** live-gen latency → **GOTCHA** fire the social trigger *first*, run enrich in parallel while it cooks; poll with a timeout and degrade gracefully to firmographic-only if it's slow.
@@ -256,6 +258,35 @@ GOTCHA log:
 - **Scope (WILL build)**: Fiber enrich + **social lookup** → SDR-brain reasoning → **Satori artifact** (real logo/data) + copy → review dashboard *with the chain* → send → reply track → **reply cyborg (draft follow-up)** → overnight coverage run → live-gen with streamed reasoning → **one Remotion+TTS video hero (Tier-2)**.
 - **Artifact stack (locked)**: **Satori** = the core image (every card), real assets filled into a designed template. **Remotion + OpenAI TTS** = the one live video hero. **gpt-image-1 / Sora 2** = optional pre-rendered *backdrop* only — never logos/text. Principle: *designed frame + real specifics, never let a model draw the specifics.*
 - **NOT building**: auth/multi-user, billing, CRM sync, real A/B framework, multi-armed bandit, video (unless hours remain), mobile, settings, agent "autonomy" theater, anything not in the demo.
+
+---
+
+## Orange Slice — the go-to-market execution harness (how to use it + the WOW finish)
+
+> Adds a **fourth sponsor with a distinct job** and gives the demo its mic-drop. Slots in *without* touching the judgment-first core — the brain is still the hero; Orange Slice is what makes the judgment *real*.
+
+**The clean division of labor (this is the system a growth engineer would actually build):**
+
+| Sponsor | One job |
+|---|---|
+| **Fiber** | the freshest **signal** (funding, hiring, their actual recent posts) |
+| **OpenAI (SDR-brain)** | the **judgment** — what to say & why |
+| **★ Orange Slice ★** | the **execution** — ship the approved judgment as GTM *code*: multichannel send + enrichment waterfall |
+| **Convex** | the **spine** — realtime pipeline + storage |
+
+No overlap, so no "why two enrichment tools?" question. Four sponsors, four jobs, one system.
+
+**Two plug-in points — both thin, both behind one adapter, neither can sink the core:**
+
+1. **Enrichment waterfall (cheap, real GTM practice).** Fiber stays primary for signal + social. When Fiber returns no verified email/phone, fall through to **Orange Slice's bundled providers** to fill the gap → buys a real **contact-coverage %** metric and protects deliverability. `orangeslice.enrichFallback(person)`.
+2. ★ **The execution harness = the WOW finale.** Today the approved card only emails via Gmail. With Orange Slice, hit Approve and the harness *executes* the whole reasoned pipeline across the channel each prospect actually lives on — email, X DM, a call for the whale — as a sales agent you programmed. "We didn't just draft the judgment. We shipped it as go-to-market code, on the right channel, live." `orangeslice.execute(approvedCard)`.
+
+**How to wire it (lazy + swappable):**
+- `lib/orangeslice.ts` — one thin adapter, two methods: `enrichFallback(person)` and `execute(approvedCard) → {channel, status, providerLog}`.
+- Confirm the exact package/MCP surface in the **Orange Slice Slack at H0** (5 min). Wrap whatever it is behind those two methods so the pipeline never sees the SDK. `// ponytail: adapter — the SDK can change without touching the app`.
+- Surface its `providerLog`/cost the same way you surface Fiber `chargeInfo` → the "budget-aware GTM engineer" beat now spans **two** providers.
+
+**Honesty guard (stay a cyborg):** Orange Slice only *executes what the human approved*. Don't claim fully-autonomous outreach — claim "approved judgment, executed as code, on the right channel." If the harness flakes mid-demo, the **Gmail send still fires** — the finale survives either way.
 
 ---
 
@@ -304,7 +335,7 @@ Rule: **don't write loop code until one correct reasoning chain + one good artif
 
 ### Task 1 — Repo + Convex + env
 - **ACTION**: New repo, Next.js (App Router, TS) + `npx convex dev`.
-- **IMPLEMENT**: `convex/schema.ts` (tables above, incl. `socialPosts[]`, `reasoning`, `replies`). `.env.local`: `OPENAI_API_KEY`, `FIBER_API_KEY`, `CONVEX_DEPLOYMENT`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`.
+- **IMPLEMENT**: `convex/schema.ts` (tables above, incl. `socialPosts[]`, `reasoning`, `replies`). `.env.local`: `OPENAI_API_KEY`, `FIBER_API_KEY`, `CONVEX_DEPLOYMENT`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `ORANGESLICE_API_KEY`.
 - **VALIDATE**: `convex dev` runs; schema pushes clean.
 - **GOTCHA**: Secrets via env only; commit `.env.example`, never `.env.local`.
 
@@ -326,9 +357,9 @@ Rule: **don't write loop code until one correct reasoning chain + one good artif
 - **VALIDATE**: Cards stream in live; the *logic* is readable in 2s; edit + approve works.
 - **GOTCHA**: `useQuery` auto-subscribes — no polling. Don't bury the reasoning behind a click — it's the hero.
 
-### Task 5 — Send + tracking + ★ Reply Cyborg ★
-- **ACTION**: `lib/mail.ts` send + `app/pixel/[id]/route.ts` open pixel + IMAP reply poll + `lib/reply.ts` reply cyborg.
-- **IMPLEMENT**: nodemailer (app password) sends approved card. Pixel logs `openedAt`. `imapflow` poller matches inbound sender → writes a `replies` row → **Reply Cyborg reads inbound + original context → drafts the follow-up** → surfaces on the dashboard for approve.
+### Task 5 — Send + tracking + ★ Reply Cyborg ★ + ★ Orange Slice execution ★
+- **ACTION**: `lib/mail.ts` send + `app/pixel/[id]/route.ts` open pixel + IMAP reply poll + `lib/reply.ts` reply cyborg + `lib/orangeslice.ts` (multichannel execution + enrichment waterfall).
+- **IMPLEMENT**: nodemailer (app password) sends approved card. Pixel logs `openedAt`. `imapflow` poller matches inbound sender → writes a `replies` row → **Reply Cyborg reads inbound + original context → drafts the follow-up** → surfaces on the dashboard for approve. **Orange Slice harness:** on Approve, `orangeslice.execute(approvedCard)` ships the outreach on the prospect's real channel (email/DM/call) and logs its `providerLog`/cost like Fiber `chargeInfo`; Gmail send stays as the fallback path. `enrichFallback` fills any contact Fiber missed before send.
 - **VALIDATE**: Real email arrives; open logs; a reply produces a contextual AI-drafted follow-up that a human would actually send.
 - **GOTCHA**: Low volume (20–40), plain text + one image, real inbox. Reply poll flaky? Manual "paste a reply" box that still triggers the cyborg — so the loop always demos.
 
@@ -366,7 +397,8 @@ Rule: **don't write loop code until one correct reasoning chain + one good artif
 4b. **The gasp (Tier-2)** — "and for the whale, one click —" → a personalized **video**: their logo + fact animate in, an **AI voiceover** names them and their exact situation. (Pre-rendered backup ready.) *"An agency week, in 90 seconds, about a company you picked."*
 5. **It carries the conversation** — show a real reply → the AI-drafted contextual follow-up. "It doesn't just say hello." (The depth that beats one-shot SDRs.)
 6. **Scale = judgment, not spam** — the overnight pipeline: hundreds of *reasoned* cards. "A day of an SDR's research and judgment, done while I slept. Here's the queue, ready to approve."
-7. **Cyborg close** — "The AI does the thinking; the human ships. We didn't make spam faster — we automated the judgment. Name another company."
+7. ★ **Ship it as code — the WOW finish** — "and here's what a slide deck can't fake: I approve, and **Orange Slice** — the go-to-market-engineering harness — *executes* the whole reasoned pipeline across the channel each prospect actually lives on: email here, an X DM there, a call for the whale. The judgment, shipped as GTM code, live." Hit **Approve** → the harness fans the approved cards out multichannel on screen, provider + cost logged. *(If it flakes: the Gmail send still fires — the beat survives.)*
+8. **Cyborg close** — "Fiber found the freshest signal. The brain made the call. Orange Slice shipped it — on the right channel, as code. The human approved; the machine did the work. We didn't make spam faster — we automated the *judgment* and executed it. Name another company."
 
 ---
 
@@ -384,7 +416,7 @@ Rule: **don't write loop code until one correct reasoning chain + one good artif
 | Real sends | 20–40 surgically personalized |
 | Replies | upside that *powers the reply loop* — **not** a reply-rate stat on tiny N |
 | Cost transparency | `chargeInfo`/credits surfaced verbatim (budget-aware agent) |
-| Sponsors used | OpenAI + Convex + Fiber (data + **social lookup**) |
+| Sponsors used | OpenAI + Convex + Fiber (signal + **social lookup**) + **Orange Slice** (enrichment waterfall + multichannel execution) |
 
 > **Deliberately dropped:** the "{N}× reply lift" headline. On 20–40 sends it's statistical noise and a sharp judge discounts everything after it. Lead with the *verifiable* (reasoning + live-gen), keep replies as fuel for the loop.
 
@@ -445,6 +477,7 @@ Rule: **don't write loop code until one correct reasoning chain + one good artif
 | Cold email deliverability | High | Med | Low volume, high personalization, plain text, clean inbox; replies are loop-fuel, not headline. |
 | "Creepy/surveillance" vibe | Med | High | Public professional info only; warm, never a roast; "sources" shows it's legit public data. |
 | Reads as LARP / image-tool | Med | High | **Reasoning chain is the hero**; human-in-loop cyborg; real data; verifiable live; reply loop = real motion. |
+| **Orange Slice surface unknown / flaky** | Med | Med | Thin `lib/orangeslice.ts` adapter (2 methods); confirm exact package in their Slack at H0; **Gmail send is the fallback** so the finale survives; execution gated behind Approve (stays a cyborg). |
 | Solo fatigue / overnight | High | Med | Coverage runs while you sleep; priority ladder = partial is still a demo. |
 | Wifi dies at judging | Med | High | Recorded backup demo + locally-cached assets + reasoning. |
 
@@ -455,6 +488,7 @@ Rule: **don't write loop code until one correct reasoning chain + one good artif
 - **Full**: reasoned pipeline + live-gen + send + reply loop + social signal.
 - **Cut coverage scale** → live-gen + reply loop + 10 hand-picked reasoned cards. (Verifiability + depth carry it.)
 - **Cut reply loop** → reasoned pipeline + verifiable live-gen. (Judgment + verifiability still win the track-fit.)
+- **Cut Orange Slice execution** → fall back to the Gmail send (keep Orange Slice as enrichment-waterfall only, or cut it entirely). Judgment + live-gen still carry it.
 - **Cut send** → reasoned pipeline + live-gen, framed as "research-and-judgment engine." (Still WOWs.)
 - **Floor**: 10 hand-curated cards on real famous companies where the **reasoning is genuinely sharp** (incl. a social-post anchor) + the thesis + one live-gen. *Quality of the judgment > quantity of features. Even this beats a polished-but-brainless generator.*
 
@@ -490,6 +524,7 @@ FIBER_API_KEY=
 CONVEX_DEPLOYMENT=
 GMAIL_USER=
 GMAIL_APP_PASSWORD=
+ORANGESLICE_API_KEY=
 ```
 
 ## NOT Building (anti-scope-creep)
