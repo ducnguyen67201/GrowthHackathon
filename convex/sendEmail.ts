@@ -10,17 +10,22 @@ import { execute as orangeSliceExecute } from "../lib/orangeslice";
 // load creative -> [Orange Slice execute | Gmail fallback] -> stamp messageId + status.
 // Lives apart from sends.ts because a "use node" module can't hold mutations.
 export const send = action({
-  args: { creativeId: v.id("creatives") },
+  args: { creativeId: v.id("creatives"), to: v.optional(v.string()) },
   handler: async (
     ctx,
-    { creativeId },
+    { creativeId, to: toArg },
   ): Promise<{ sendId: string; messageId: string; channel: string }> => {
     const payload = await ctx.runQuery(api.sends.getForSend, { creativeId });
 
+    // Recipient picker: an explicit address from the UI means "actually deliver this to
+    // me" — a real send to that inbox, bypassing dry-run. This is the live test path.
+    const explicitTo =
+      typeof toArg === "string" && toArg.trim() ? toArg.trim() : null;
+
     // Demo dry-run: skip real delivery but still record + flip the creative to
     // sent, so the funnel resolves green without Gmail / Orange Slice creds.
-    // Enable with `npx convex env set SEND_DRY_RUN 1`.
-    if (process.env.SEND_DRY_RUN) {
+    // Enable with `npx convex env set SEND_DRY_RUN 1`. Skipped when a recipient is picked.
+    if (!explicitTo && process.env.SEND_DRY_RUN) {
       const sendId = await ctx.runMutation(api.sends.record, {
         creativeId,
         to: payload.to,
@@ -32,10 +37,8 @@ export const send = action({
       return { sendId, messageId, channel: "dry-run" };
     }
 
-    // Dev override: force every send to one inbox so you can test against your own
-    // email instead of the real prospect. Set with
-    // `npx convex env set SEND_TO_OVERRIDE you@gmail.com`; unset to send for real.
-    const to = process.env.SEND_TO_OVERRIDE ?? payload.to;
+    // Picked recipient wins; then the SEND_TO_OVERRIDE env default; then the prospect.
+    const to = explicitTo ?? process.env.SEND_TO_OVERRIDE ?? payload.to;
 
     // Orange Slice first: it owns delivery + its own tracking, so it never sees our
     // open-pixel. Anything but a clean "sent" (incl. OS unconfigured) falls to Gmail.

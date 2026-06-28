@@ -18,7 +18,12 @@ export const getForSend = query({
     }
     const person = await ctx.db.get(creative.personId);
     if (!person) throw new Error(`person ${creative.personId} not found`);
-    if (!person.email) throw new Error(`person ${person.name} has no email`);
+    // Re-trigger seed people have no email — synthesize a stable one from name + domain.
+    // Real delivery to fake prospects should use SEND_TO_OVERRIDE; dry-run never sends.
+    const company = await ctx.db.get(creative.companyId);
+    const first = person.name.trim().split(/\s+/)[0] ?? "contact";
+    const handle = first.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const to = person.email ?? `${handle || "contact"}@${company?.domain ?? "example.com"}`;
 
     const idx = creative.chosenCopyIndex ?? 0;
     const variant = creative.copyVariants[idx];
@@ -30,7 +35,7 @@ export const getForSend = query({
       : undefined;
 
     return {
-      to: person.email,
+      to,
       subject: variant.subject,
       body: variant.body,
       pngUrl,

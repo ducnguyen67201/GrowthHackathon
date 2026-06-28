@@ -1,27 +1,32 @@
-/* Design tokens — defined in Wave 0 so all UI branches (C/E/G) stay consistent.
-   Branches reference these, never hardcode palette.
+/* Design tokens — the single source of palette, type, rhythm and motion. Every
+   surface references these, never hardcodes color.
 
-   Light theme: a clean cool-white page with white cards that lift off it, deep
-   slate text, and a deepened emerald "cyborg" accent that stays legible both as
-   text on white and as a fill behind white text (--color-on-accent). */
+   Direction: FRIENDLY & WARM "mission control". A soft cream / warm-paper page,
+   cards a touch warmer than pure white that lift off it, an espresso-warm text,
+   a softened emerald "cyborg" accent, and a warm coral/amber secondary for
+   highlights. Rounder corners, larger softer (warm-tinted) shadows. */
 :root {
-  /* surfaces — light, cool paper; cards are pure white and sit above the page */
-  --color-bg: oklch(97% 0.006 250);
-  --color-surface: oklch(100% 0 0);
-  --color-surface-2: oklch(96.5% 0.008 250);
-  --color-border: oklch(89% 0.012 250);
+  /* surfaces — warm paper page; cards are a touch warmer than white and lift off it */
+  --color-bg: oklch(96.4% 0.014 78);
+  --color-surface: oklch(99% 0.008 85);
+  --color-surface-2: oklch(95% 0.018 76);
+  --color-border: oklch(89% 0.02 72);
 
-  /* text — deep slate, not pure black */
-  --color-text: oklch(26% 0.02 262);
-  --color-text-dim: oklch(50% 0.018 262);
+  /* text — deep warm espresso, not pure black */
+  --color-text: oklch(27% 0.026 55);
+  --color-text-dim: oklch(49% 0.03 56);
 
-  /* accent — the "cyborg" signal color, deepened for contrast on white */
-  --color-accent: oklch(52% 0.14 156);
-  --color-accent-2: oklch(50% 0.19 285);
-  --color-danger: oklch(53% 0.2 25);
+  /* accent — the "cyborg" signal color, a softened emerald that stays legible */
+  --color-accent: oklch(52% 0.13 161);
+  --color-accent-soft: oklch(62% 0.11 162);
+  /* secondary — warm coral, legible as text */
+  --color-accent-2: oklch(60% 0.16 42);
+  /* amber — for large display accents / glow (large text only) */
+  --color-amber: oklch(74% 0.145 72);
+  --color-danger: oklch(55% 0.19 28);
 
   /* text/icons that sit on top of an accent/danger fill */
-  --color-on-accent: oklch(99% 0 0);
+  --color-on-accent: oklch(99% 0.012 90);
 
   /* type scale */
   --text-sm: clamp(0.82rem, 0.8rem + 0.1vw, 0.9rem);
@@ -34,17 +39,21 @@
   --space-2: 1rem;
   --space-3: 1.5rem;
   --space-4: 2.5rem;
-  --radius: 14px;
-  --radius-sm: 8px;
+  --radius: 18px;
+  --radius-sm: 12px;
+  --radius-lg: 26px;
 
-  /* elevation — soft, tinted shadows read better than pure black on light */
+  /* layout — pinned header height so the cockpit can fill exactly one viewport */
+  --header-h: 56px;
+
+  /* elevation — soft, large, warm-tinted shadows read better than cool/black on cream */
   --shadow-card:
-    0 1px 2px oklch(40% 0.04 262 / 0.05),
-    0 6px 18px -12px oklch(40% 0.04 262 / 0.22);
+    0 1px 2px oklch(45% 0.05 60 / 0.04),
+    0 10px 28px -16px oklch(45% 0.07 60 / 0.22);
   --shadow-card-hover:
-    0 2px 4px oklch(40% 0.04 262 / 0.06),
-    0 14px 30px -14px oklch(40% 0.04 262 / 0.3);
-  --shadow-pop: 0 14px 34px -16px oklch(40% 0.04 262 / 0.28);
+    0 2px 6px oklch(45% 0.05 60 / 0.06),
+    0 20px 44px -18px oklch(45% 0.07 60 / 0.3);
+  --shadow-pop: 0 18px 44px -20px oklch(42% 0.07 60 / 0.32);
 
   /* motion (compositor-friendly only) */
   --dur-fast: 150ms;

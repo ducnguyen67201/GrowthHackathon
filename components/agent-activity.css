@@ -1,0 +1,104 @@
+/* The always-on agent console — a streaming status line with a sweeping scan bar. */
+
+.agent {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 var(--space-2);
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-size: var(--text-sm);
+  overflow: hidden;
+}
+
+.agent-dot {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--color-accent);
+  animation: agent-pulse 1.6s ease-in-out infinite;
+}
+
+.agent-label {
+  flex: none;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+.agent-event {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+  animation: agent-in 0.45s var(--ease) both;
+}
+
+.agent-time {
+  flex: none;
+  font-size: 0.72rem;
+  color: var(--color-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* the sweeping scan line = continuous processing */
+.agent::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 35%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-accent),
+    transparent
+  );
+  opacity: 0.7;
+  animation: agent-scan 2.8s linear infinite;
+}
+
+@keyframes agent-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.45rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes agent-pulse {
+  50% {
+    opacity: 0.3;
+    transform: scale(1.45);
+  }
+}
+
+@keyframes agent-scan {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(360%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-dot,
+  .agent-event,
+  .agent::after {
+    animation: none;
+  }
+}

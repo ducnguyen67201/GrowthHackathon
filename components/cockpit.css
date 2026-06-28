@@ -1,0 +1,488 @@
+/* The cockpit — a single-viewport, full-bleed, friendly/warm "mission control" bento.
+   header + cockpit == one viewport, no page scroll; list-heavy panels scroll internally.
+   References tokens (styles/tokens.css); never hardcodes palette. */
+
+.cockpit {
+  --gutter: clamp(0.6rem, 0.35rem + 0.7vw, 1.05rem);
+  --cgap: clamp(0.55rem, 0.35rem + 0.55vw, 0.9rem);
+
+  box-sizing: border-box;
+  width: 100%;
+  height: calc(100dvh - var(--header-h));
+  margin: 0;
+  padding: var(--gutter);
+  overflow: hidden;
+
+  display: grid;
+  gap: var(--cgap);
+  grid-template-columns: 1.32fr 1.16fr 1.04fr;
+  grid-template-rows: auto minmax(0, 1.06fr) minmax(0, 1fr) auto;
+  grid-template-areas:
+    "agent agent agent"
+    "radar board live"
+    "brain board live"
+    "pipe  pipe  pipe";
+}
+
+/* belt-and-braces: the cockpit route never lets the page itself scroll */
+body:has(.cockpit) {
+  overflow: hidden;
+}
+
+/* not-connected state still fills the viewport instead of a bare line */
+.cockpit-fallback {
+  box-sizing: border-box;
+  height: calc(100dvh - var(--header-h));
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--color-text-dim);
+}
+
+/* ---- the agent ticker, as a slim full-width bar ---- */
+.cockpit-agent {
+  grid-area: agent;
+  min-width: 0;
+}
+
+.cockpit-agent .agent {
+  margin: 0;
+  border-radius: var(--radius);
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  padding: 0.5rem 1rem;
+}
+
+/* ---- panels ---- friendly warm cards with a microcopy header and a scrolling body ---- */
+.panel {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition:
+    transform var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+
+.panel:hover {
+  box-shadow: var(--shadow-card-hover);
+  border-color: color-mix(in oklch, var(--color-accent) 24%, var(--color-border));
+}
+
+.panel--radar {
+  grid-area: radar;
+}
+.panel--board {
+  grid-area: board;
+}
+.panel--brain {
+  grid-area: brain;
+}
+.panel--live {
+  grid-area: live;
+}
+
+/* the focal panel gets a warmer rim + ground so the eye lands there first */
+.panel--radar {
+  border-color: color-mix(in oklch, var(--color-amber) 38%, var(--color-border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--color-amber) 7%, var(--color-surface)),
+    var(--color-surface) 38%
+  );
+}
+
+.panel-head {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.7rem 0.95rem 0.6rem;
+  border-bottom: 1px solid color-mix(in oklch, var(--color-border) 70%, transparent);
+}
+
+.panel-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.panel-eyebrow {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  line-height: 1.15;
+}
+
+.panel-tag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--color-text-dim);
+  white-space: nowrap;
+}
+
+.panel-tag-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--color-accent);
+  animation: panel-pulse 2s ease-in-out infinite;
+}
+
+@keyframes panel-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.75rem 0.95rem 0.9rem;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--color-text-dim) 35%, transparent)
+    transparent;
+}
+
+.panel-body--clip {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-body::-webkit-scrollbar {
+  width: 9px;
+}
+.panel-body::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--color-text-dim) 28%, transparent);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* ===================================================================== */
+/* Scoped overrides so reused components sit flush inside compact panels.  */
+/* ===================================================================== */
+
+/* --- Regulatory Radar (focal) --- */
+.cockpit .reg-radar {
+  margin: 0;
+  gap: 0.7rem;
+}
+.cockpit .reg-head {
+  display: none; /* the panel header replaces the component's own kicker */
+}
+.cockpit .reg-tabs {
+  gap: 0.35rem;
+}
+.cockpit .reg-card {
+  border-radius: var(--radius);
+  border-left-width: 4px;
+  padding: var(--space-2);
+}
+.cockpit .reg-card-top {
+  margin-bottom: 0.3rem;
+}
+/* tame the reg title so the $/cohort numbers are unmistakably the focal point */
+.cockpit .reg-title {
+  font-size: clamp(1.15rem, 0.9rem + 0.8vw, 1.5rem);
+  margin-bottom: 0.3rem;
+}
+.cockpit .reg-summary {
+  margin-bottom: var(--space-1);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* the headline — $2.06M · 9 deals — made the focal point */
+.cockpit .reg-impact {
+  gap: var(--space-2) var(--space-3);
+}
+.cockpit .reg-impact-num strong,
+.cockpit .reg-impact-val strong {
+  font-size: clamp(2rem, 1.4rem + 1.4vw, 2.7rem);
+  line-height: 0.95;
+}
+.cockpit .reg-impact-val strong {
+  color: var(--color-accent-2); /* the $ in warm coral */
+}
+.cockpit .reg-cta {
+  padding: 0.55rem 0.9rem;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 20px -10px color-mix(in oklch, var(--color-accent) 60%, transparent);
+}
+/* hide the radar's inline per-deal cohort in the cockpit — the ranked board already lists
+   the same deals (and with the board's authoritative scores), so two lists can't disagree.
+   The standalone /signals radar keeps its cohort list. */
+.cockpit .reg-cohort,
+.cockpit .reg-empty {
+  display: none;
+}
+
+/* --- Ranked board: keep it scannable in the cockpit (detail lives on /signals) --- */
+.cockpit .panel--board .rt-list {
+  gap: 0.5rem;
+}
+.cockpit .panel--board .rt-row {
+  grid-template-columns: 54px 1fr;
+  gap: 0.85rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border-color: var(--color-border);
+  background: var(--color-surface-2);
+}
+.cockpit .panel--board .rt-score {
+  font-size: 1.5rem;
+  color: var(--color-accent);
+}
+.cockpit .panel--board .rt-account {
+  font-size: 1rem;
+}
+.cockpit .panel--board .rt-body {
+  gap: 0.4rem;
+  min-width: 0;
+}
+/* the external-signal pill is long ("+ expanding to three new states · via Fiber"): let it
+   wrap inside the cell instead of bleeding past the panel's clipped right edge */
+.cockpit .panel--board .rt-chips {
+  min-width: 0;
+}
+.cockpit .panel--board .rt-chip {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+/* drop the verbose internals so the list reads as "who's worth a call" at a glance */
+.cockpit .panel--board .reasoning,
+.cockpit .panel--board .rt-bar,
+.cockpit .panel--board .rt-drill {
+  display: none;
+}
+.cockpit .panel--board .rt-row--top {
+  background: color-mix(in oklch, var(--color-accent) 8%, var(--color-surface));
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--color-accent) 30%, transparent),
+    0 8px 22px -14px color-mix(in oklch, var(--color-accent) 45%, transparent);
+}
+
+/* --- Brain graph: chrome-less, scaled to fit the compact panel --- */
+.cockpit .bg-wrap {
+  border: none;
+  background: transparent;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.cockpit .bg-legend {
+  margin-bottom: 0.5rem;
+  gap: 0.35rem 0.8rem;
+  font-size: 0.62rem;
+}
+.cockpit .bg-svg {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+.cockpit .bg-loading {
+  padding: 1rem 0;
+}
+/* at this compact size (~440×240) the per-node text overlaps into noise — drop the labels so
+   it reads as an intentional constellation. The legend still explains the colors; hover still
+   highlights paths; full labels live on /brain. */
+.cockpit .bg-label {
+  display: none;
+}
+
+/* --- Live re-trigger: the body is a flex column so the idle ghost preview fills the tall
+   column; a real run overflows and the body scrolls internally (no page scroll). --- */
+.cockpit .panel--live .panel-body {
+  display: flex;
+  flex-direction: column;
+}
+.cockpit .panel--live .livep--compact {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+/* the generated card image shouldn't blow out the column */
+.cockpit .panel--live .card-artifact {
+  max-height: 280px;
+  object-fit: contain;
+  object-position: left top;
+  background: var(--color-surface-2);
+}
+
+/* ===================================================================== */
+/* Pipeline status strip (bottom)                                         */
+/* ===================================================================== */
+.pstrip {
+  grid-area: pipe;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: clamp(0.6rem, 0.3rem + 1vw, 1.6rem);
+  padding: 0.55rem 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pstrip::-webkit-scrollbar {
+  display: none;
+}
+
+.pstrip-total {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  flex: none;
+  /* a little left breathing room so the Next dev indicator doesn't sit on the number */
+  padding-left: 0.5rem;
+  padding-right: clamp(0.6rem, 0.3rem + 1vw, 1.6rem);
+  border-right: 1px solid var(--color-border);
+}
+.pstrip-total-num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+.pstrip-total-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-dim);
+}
+
+.pstrip-stats {
+  display: flex;
+  align-items: stretch;
+  gap: clamp(0.5rem, 0.2rem + 0.9vw, 1.3rem);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pstrip-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+.pstrip-stat-num {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+.pstrip-stat-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-dim);
+}
+.pstrip-stat--accent .pstrip-stat-num {
+  color: var(--color-accent);
+}
+.pstrip-stat--warm .pstrip-stat-num {
+  color: var(--color-accent-2);
+}
+.pstrip-stat--danger .pstrip-stat-num {
+  color: var(--color-danger);
+}
+
+.pstrip-link {
+  flex: none;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-accent);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: gap var(--dur-fast) var(--ease);
+}
+.pstrip-link:hover {
+  gap: 0.6rem;
+}
+.pstrip-link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .pstrip-link,
+  .panel-tag-dot {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* ===================================================================== */
+/* Narrower desktops / tablets — keep one viewport, restack the bento.    */
+/* ===================================================================== */
+@media (max-width: 1100px) {
+  .cockpit {
+    grid-template-columns: 1.25fr 1fr;
+    grid-template-rows: auto minmax(0, 1.15fr) minmax(0, 1fr) auto;
+    grid-template-areas:
+      "agent agent"
+      "radar live"
+      "board brain"
+      "pipe  pipe";
+  }
+}
+
+@media (max-width: 760px) {
+  /* below tablet, the no-scroll constraint stops being meaningful — let it flow */
+  body:has(.cockpit) {
+    overflow: auto;
+  }
+  .cockpit {
+    height: auto;
+    overflow: visible;
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-template-areas:
+      "agent"
+      "radar"
+      "board"
+      "live"
+      "brain"
+      "pipe";
+  }
+  .panel {
+    min-height: 320px;
+  }
+}

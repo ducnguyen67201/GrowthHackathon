@@ -1,0 +1,209 @@
+/* Reading-Minds re-aim — the Signal Flow rail. Editorial funnel, not a stepper:
+   each node's bar fills against the FULL graveyard (ghost track behind it), so the
+   narrowing 12 → 5 → 1 reads as shrinking fill; connectors carry the drop. All 4 stages
+   fit at 320px (no scroll needed); overflow-x is a safety net. Motion is transform/opacity
+   only and gated behind prefers-reduced-motion. */
+
+.sfr {
+  --sfr-accent: oklch(62% 0.19 145);
+  --sfr-cut: oklch(58% 0.2 25);
+  margin: 0 0 1.75rem;
+  padding: 1.1rem 1.25rem 1.25rem;
+  border: 1px solid color-mix(in oklch, currentColor 12%, transparent);
+  border-radius: 16px;
+  background: color-mix(in oklch, canvas 94%, currentColor 3%);
+}
+
+.sfr-head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+}
+
+.sfr-kicker {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  opacity: 0.55;
+}
+
+.sfr-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--sfr-accent);
+}
+
+.sfr-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--sfr-accent);
+}
+
+.sfr-note {
+  margin-left: auto;
+  font-size: 0.7rem;
+  opacity: 0.45;
+  white-space: nowrap;
+}
+
+/* the money hook — the hero number a founder reads first */
+.sfr-recovered {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-bottom: 1.15rem;
+}
+
+.sfr-rec-value {
+  font-size: clamp(2.4rem, 1.3rem + 5vw, 4.6rem);
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--sfr-accent);
+}
+
+.sfr-rec-label {
+  font-size: 0.82rem;
+  opacity: 0.6;
+}
+
+.sfr-track {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 0.2rem;
+}
+
+.sfr-node {
+  flex: 1 1 0;
+  min-width: clamp(50px, 16vw, 124px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+}
+
+.sfr-stage {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+.sfr-count {
+  font-size: clamp(1.5rem, 1rem + 3vw, 3.1rem);
+  font-weight: 700;
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums;
+  color: var(--sfr-accent);
+  display: flex;
+  align-items: baseline;
+}
+
+.sfr-den {
+  font-size: 0.46em;
+  font-weight: 600;
+  opacity: 0.5;
+}
+
+/* the funnel: a full-width ghost track with a fill that scales to count/graveyard.
+   side-by-side, the fills shrink 100% → 42% → 8% — the narrowing you can see. */
+.sfr-funnel-track {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in oklch, currentColor 9%, transparent);
+  overflow: hidden;
+}
+
+.sfr-funnel {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--sfr-accent);
+  transform-origin: left center;
+}
+
+.sfr-sub {
+  font-size: 0.7rem;
+  opacity: 0.5;
+}
+
+/* arrow tracks the count's vertical center across breakpoints via the SAME clamp
+   used for the count size (no magic offset that drifts). */
+.sfr-arrow {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  margin-top: calc(0.95rem + clamp(1.5rem, 1rem + 3vw, 3.1rem) * 0.47);
+}
+
+.sfr-arrow-glyph {
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--sfr-accent);
+  opacity: 0.5;
+}
+
+.sfr-drop {
+  font-size: 0.64rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--sfr-cut);
+  opacity: 0.85;
+}
+
+.sfr[data-loading="true"] {
+  opacity: 0.55;
+}
+
+/* motion — compositor-only, and only when the user allows it */
+@media (prefers-reduced-motion: no-preference) {
+  .sfr-funnel {
+    transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  /* one-shot reveal: the count is keyed on its value, so a real change remounts it
+     and re-fires this — the motion MEANS "a number just updated". */
+  .sfr-count {
+    animation: sfr-rise 420ms ease-out;
+  }
+  /* the active (Scoring) stage breathes to signal the live batch */
+  .sfr-node--active .sfr-count {
+    animation: sfr-pulse 2.2s ease-in-out infinite;
+    transform-origin: left center;
+  }
+  .sfr-live-dot {
+    animation: sfr-blink 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes sfr-rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes sfr-pulse {
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes sfr-blink {
+  50% {
+    opacity: 0.35;
+  }
+}

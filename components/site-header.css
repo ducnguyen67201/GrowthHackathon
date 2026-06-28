@@ -4,15 +4,16 @@
   position: sticky;
   top: 0;
   z-index: 50;
-  background: color-mix(in oklch, var(--color-bg) 88%, transparent);
-  backdrop-filter: blur(10px);
+  height: var(--header-h);
+  background: color-mix(in oklch, var(--color-bg) 82%, transparent);
+  backdrop-filter: blur(12px) saturate(1.1);
   border-bottom: 1px solid var(--color-border);
 }
 
 .site-header-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0.7rem var(--space-2);
+  margin: 0;
+  height: 100%;
+  padding: 0 var(--space-3);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -51,6 +52,48 @@
 .site-nav {
   display: flex;
   gap: 0.25rem;
+}
+
+/* Flow stepper: numbered steps joined by arrows so the nav reads as one pipeline. */
+.site-flow {
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.site-flow-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.site-flow-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--color-surface-2, var(--color-surface));
+  color: var(--color-text-dim);
+  border: 1px solid var(--color-border);
+  transition:
+    background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+
+.site-nav-link[aria-current="page"] .site-flow-num {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border-color: var(--color-accent);
+}
+
+.site-flow-arrow {
+  color: var(--color-text-dim);
+  font-size: 0.8rem;
+  opacity: 0.5;
 }
 
 .site-nav-link {
@@ -92,11 +135,20 @@
   background: var(--color-accent);
 }
 
-@media (max-width: 480px) {
-  .site-brand-tag {
+@media (max-width: 640px) {
+  .site-flow-arrow {
+    display: none;
+  }
+  .site-flow-label {
     display: none;
   }
   .site-nav-link {
-    padding: 0.4rem 0.55rem;
+    padding: 0.4rem 0.45rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .site-brand-tag {
+    display: none;
   }
 }

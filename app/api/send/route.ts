@@ -9,16 +9,20 @@ export async function POST(req: Request) {
     return new Response("NEXT_PUBLIC_CONVEX_URL not set", { status: 503 });
   }
 
-  const { creativeId } = (await req.json()) as { creativeId?: unknown };
+  const { creativeId, to } = (await req.json()) as {
+    creativeId?: unknown;
+    to?: unknown;
+  };
   if (typeof creativeId !== "string" || !creativeId) {
     return new Response("creativeId required", { status: 400 });
   }
+  const recipient = typeof to === "string" && to.trim() ? to.trim() : undefined;
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        for await (const ev of runSend(creativeId)) {
+        for await (const ev of runSend(creativeId, recipient)) {
           controller.enqueue(encoder.encode(JSON.stringify(ev) + "\n"));
         }
       } catch (e) {

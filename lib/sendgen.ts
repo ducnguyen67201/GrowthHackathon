@@ -38,7 +38,10 @@ function convex(): ConvexHttpClient {
   return new ConvexHttpClient(url);
 }
 
-export async function* runSend(creativeId: string): AsyncGenerator<SendEvent> {
+export async function* runSend(
+  creativeId: string,
+  to?: string,
+): AsyncGenerator<SendEvent> {
   try {
     const client = convex();
 
@@ -128,7 +131,10 @@ export async function* runSend(creativeId: string): AsyncGenerator<SendEvent> {
 
     // Real delivery (Orange Slice → Gmail, open-pixel, status flip).
     yield { stage: "sending" };
-    const res = await client.action(api.sendEmail.send, { creativeId: c._id });
+    const res = await client.action(api.sendEmail.send, {
+      creativeId: c._id,
+      ...(to ? { to } : {}),
+    });
 
     yield {
       stage: "done",

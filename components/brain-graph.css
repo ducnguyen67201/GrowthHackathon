@@ -1,0 +1,62 @@
+/* Reading-Minds re-aim — the company-brain knowledge graph. Layered left→right:
+   accounts · Fiber signals · objections · shipped features. Green resolved_by edges
+   are the re-trigger paths. Hover a node to trace its connections. */
+
+.bg-wrap {
+  border: 1px solid color-mix(in oklch, currentColor 12%, transparent);
+  border-radius: 16px;
+  background: color-mix(in oklch, canvas 95%, currentColor 2%);
+  padding: 1rem 1.1rem 1.2rem;
+}
+
+.bg-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.1rem;
+  margin-bottom: 0.8rem;
+  font-size: 0.76rem;
+  opacity: 0.8;
+}
+
+.bg-leg {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.bg-leg i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.bg-leg--edge i {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.bg-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.bg-node {
+  cursor: pointer;
+  transition: opacity 160ms ease;
+}
+
+.bg-label {
+  font-size: 12px;
+  fill: currentColor;
+  paint-order: stroke;
+  pointer-events: none;
+}
+
+.bg-loading {
+  opacity: 0.5;
+  padding: 2rem 0;
+}

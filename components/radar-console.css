@@ -1,0 +1,317 @@
+/* War-Room Radar — the 3D view. Dark scope stage + a light docked case-file panel.
+   Tabs switch radar ⇄ list; nothing is removed, the list is one click away. */
+
+/* --- view tabs --- */
+.sv {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+.sv-tabs {
+  display: inline-flex;
+  gap: 0.3rem;
+  padding: 0.3rem;
+  border-radius: 12px;
+  background: color-mix(in oklch, canvas 90%, currentColor 5%);
+  border: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  align-self: flex-start;
+}
+.sv-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.95rem;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  opacity: 0.62;
+  transition:
+    opacity 150ms ease,
+    background 150ms ease;
+}
+.sv-tab:hover {
+  opacity: 0.9;
+}
+.sv-tab--on {
+  opacity: 1;
+  background: color-mix(in oklch, oklch(62% 0.19 145) 16%, canvas);
+  box-shadow: 0 1px 0 color-mix(in oklch, oklch(62% 0.19 145) 30%, transparent);
+}
+.sv-tab-glyph {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.sv-tab-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.34rem;
+  border-radius: 999px;
+  color: oklch(98% 0 0);
+  background: oklch(62% 0.19 145);
+}
+
+/* --- console layout: scope on the left, case file docked on the right --- */
+.radar-console {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(330px, 0.9fr);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+@media (max-width: 900px) {
+  .radar-console {
+    grid-template-columns: 1fr;
+  }
+}
+
+.radar-stage {
+  position: relative;
+  height: clamp(460px, 62vh, 660px);
+  border-radius: 20px;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 8%, #0b1f33 0%, #050912 58%, #03060d 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, oklch(70% 0.12 200) 18%, transparent),
+    0 24px 60px -32px oklch(20% 0.08 240);
+}
+.radar-canvas {
+  position: absolute;
+  inset: 0;
+}
+.radar-canvas canvas {
+  display: block;
+  touch-action: none;
+}
+
+/* the loading scope — a dim pulse so the stage never flashes empty */
+.radar-skel {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(closest-side, #0d2740 0%, transparent 70%);
+  opacity: 0.5;
+  animation: radar-skel 1.6s ease-in-out infinite;
+}
+@keyframes radar-skel {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+/* --- HUD overlay (top-left), war-room readout --- */
+.radar-hud {
+  position: absolute;
+  top: 1rem;
+  left: 1.15rem;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  color: oklch(86% 0.03 200);
+  font-size: 0.78rem;
+}
+.radar-hud-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+.radar-hud-sweep {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-variant-numeric: tabular-nums;
+  color: oklch(82% 0.13 150);
+}
+.radar-hud-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: oklch(72% 0.18 150);
+  box-shadow: 0 0 8px oklch(72% 0.18 150);
+  animation: radar-hud-blink 1.8s ease-in-out infinite;
+}
+@keyframes radar-hud-blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+.radar-legend {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  opacity: 0.85;
+}
+.radar-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.radar-key {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.radar-key--live {
+  background: #34d27b;
+  box-shadow: 0 0 8px #34d27b;
+}
+.radar-key--dim {
+  background: #46618f;
+}
+.radar-legend-hint {
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  opacity: 0.5;
+}
+
+/* the floating blip labels rendered from inside the 3D scene (drei <Html>) */
+.radar-tag-wrap {
+  pointer-events: none;
+}
+.radar-tag {
+  white-space: nowrap;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: oklch(96% 0.02 150);
+  background: color-mix(in oklch, #0b1f33 80%, transparent);
+  border: 1px solid color-mix(in oklch, #34d27b 45%, transparent);
+  backdrop-filter: blur(2px);
+}
+.radar-tag--active {
+  border-color: #9affc9;
+  box-shadow: 0 0 14px -2px #34d27b;
+}
+
+/* --- docked case-file panel (light surface, reads on the page) --- */
+.radar-panel {
+  height: clamp(460px, 62vh, 660px);
+  overflow-y: auto;
+  border-radius: 18px;
+  padding: 1.3rem 1.35rem;
+  border: 1px solid color-mix(in oklch, currentColor 12%, transparent);
+  background: color-mix(in oklch, canvas 96%, currentColor 2%);
+}
+@media (max-width: 900px) {
+  .radar-panel {
+    height: auto;
+    max-height: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .radar-panel-in {
+    animation: radar-panel-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+@keyframes radar-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.radar-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+.radar-panel-who {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.radar-panel-acct {
+  font-size: 1.3rem;
+  line-height: 1.1;
+}
+.radar-panel-contact {
+  opacity: 0.6;
+  font-size: 0.9rem;
+}
+.radar-panel-score {
+  position: relative;
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: oklch(62% 0.19 145);
+}
+.radar-panel-pin {
+  position: absolute;
+  top: -0.55rem;
+  right: 0;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: oklch(98% 0 0);
+  background: oklch(62% 0.19 145);
+  padding: 0.08rem 0.34rem;
+  border-radius: 999px;
+}
+.radar-panel-obj {
+  display: inline-block;
+  margin-bottom: 0.6rem;
+}
+
+/* idle state — the scope is watching, nothing pinned yet */
+.radar-panel-idle {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  opacity: 0.85;
+}
+.radar-panel-idle p {
+  margin: 0;
+  font-size: 1rem;
+}
+.radar-panel-idle-sub {
+  font-size: 0.85rem;
+  opacity: 0.6;
+  max-width: 30ch;
+}
+.radar-panel-idle-pulse {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 2px solid oklch(62% 0.19 145);
+  box-shadow: 0 0 0 0 color-mix(in oklch, oklch(62% 0.19 145) 50%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .radar-panel-idle-pulse {
+    animation: radar-idle 2.4s ease-out infinite;
+  }
+}
+@keyframes radar-idle {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, oklch(62% 0.19 145) 45%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 22px transparent;
+  }
+}
+
+/* --- WebGL-missing fallback --- */
+.radar-fallback-note {
+  font-size: 0.85rem;
+  opacity: 0.6;
+  margin: 0 0 0.9rem;
+}

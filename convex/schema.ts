@@ -47,9 +47,58 @@ export default defineSchema({
     ),
     runId: v.optional(v.id("runs")),
     createdAt: v.number(),
+    // Reading-Minds re-aim (additive): a re-trigger creative carries its score so the
+    // board can rank dead-pipeline accounts. Absent on cold-path creatives.
+    retriggerScore: v.optional(v.number()),
+    retriggerBreakdown: v.optional(v.any()),
+    externalSignal: v.optional(v.string()),
+    lostDealId: v.optional(v.id("lostDeals")),
   })
     .index("by_status", ["status"])
     .index("by_company", ["companyId"]),
+
+  // --- Reading-Minds re-aim: the dead-pipeline input the engine reads (additive) ---
+
+  // A closed-lost deal. First-party signal (seed/CRM) — Fiber can't know who YOU lost.
+  lostDeals: defineTable({
+    account: v.string(),
+    contact: v.string(),
+    title: v.optional(v.string()),
+    email: v.optional(v.string()),
+    domain: v.optional(v.string()),
+    lostReason: v.string(),
+    lostDate: v.string(), // ISO yyyy-mm-dd
+    value: v.optional(v.number()), // deal ACV ($) — drives "recovered pipeline" hero
+    transcript: v.optional(v.string()),
+    // the external "what changed since" trigger (e.g. "champion just became VP Eng").
+    // Seeded for a deterministic demo; swap to a live lib/fiber.ts lookup post-hackathon.
+    externalSignal: v.optional(v.string()),
+    externalSignalType: v.optional(v.string()), // Fiber trigger: funding_round, hiring, champion_job_change…
+    transcriptDate: v.optional(v.string()), // when the call that surfaced the objection happened
+    // links to company/person rows so a re-trigger creative (which requires them) and
+    // the artifact renderer reuse the existing lead shape.
+    companyId: v.optional(v.id("companies")),
+    personId: v.optional(v.id("people")),
+    // filled by extractObjection() — kept on the row so the board shows the read
+    objection: v.optional(v.string()),
+    objectionCategory: v.optional(v.string()),
+    objectionCluster: v.optional(v.string()),
+  }),
+
+  // What shipped recently — the internal trigger an objection can dissolve against.
+  changelog: defineTable({
+    feature: v.string(),
+    description: v.string(),
+    shippedAt: v.string(), // ISO yyyy-mm-dd
+    solves: v.array(v.string()), // objection tags this feature resolves
+  }),
+
+  // Re-won deals — their objection text seeds the "continuous learning" centroid.
+  wonOutcomes: defineTable({
+    account: v.string(),
+    objection: v.string(),
+    reWonAt: v.string(),
+  }),
 
   sends: defineTable({
     creativeId: v.id("creatives"),

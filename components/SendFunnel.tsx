@@ -22,10 +22,11 @@ const STAGES: { key: string; label: string; sub: string }[] = [
 type Props = {
   title: string;
   creativeId: string;
+  to?: string; // explicit recipient (the picker) → real send to this inbox
   onClose: (ok: boolean) => void;
 };
 
-export function SendFunnel({ title, creativeId, onClose }: Props) {
+export function SendFunnel({ title, creativeId, to, onClose }: Props) {
   const [active, setActive] = useState(0);
   const [skipped, setSkipped] = useState<number[]>([]);
   const [phase, setPhase] = useState<"working" | "done" | "error">("working");
@@ -44,7 +45,7 @@ export function SendFunnel({ title, creativeId, onClose }: Props) {
         const res = await fetch("/api/send", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ creativeId }),
+          body: JSON.stringify({ creativeId, to }),
           signal: ac.signal,
         });
         if (!res.ok || !res.body) {
@@ -92,7 +93,7 @@ export function SendFunnel({ title, creativeId, onClose }: Props) {
     })();
 
     return () => ac.abort();
-  }, [creativeId]);
+  }, [creativeId, to]);
 
   // Auto-close on success — unless a video is ready, then leave it up to view.
   useEffect(() => {

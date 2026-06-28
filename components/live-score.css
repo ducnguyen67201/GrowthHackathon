@@ -1,0 +1,223 @@
+/* Reading-Minds re-aim — the live "name a deal you lost" beat. A prominent interactive
+   panel: input → streamed steps lighting up in sequence → the scored re-engagement. */
+
+.ls {
+  --ls-accent: oklch(62% 0.19 145);
+  margin: 0 0 1.75rem;
+  padding: 1.25rem 1.4rem 1.4rem;
+  border: 1px solid color-mix(in oklch, var(--ls-accent) 32%, transparent);
+  border-radius: 16px;
+  background: color-mix(in oklch, var(--ls-accent) 5%, canvas);
+}
+
+.ls-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+}
+
+.ls-kicker {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ls-accent);
+}
+
+.ls-hint {
+  font-size: 0.78rem;
+  opacity: 0.55;
+}
+
+.ls-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ls-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.95rem;
+  color: inherit;
+  background: color-mix(in oklch, canvas 92%, currentColor 4%);
+  border: 1px solid color-mix(in oklch, currentColor 16%, transparent);
+  border-radius: 10px;
+}
+
+.ls-input:focus-visible {
+  outline: 2px solid var(--ls-accent);
+  outline-offset: 1px;
+}
+
+.ls-go {
+  flex: 0 0 auto;
+  padding: 0.7rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: oklch(98% 0 0);
+  background: var(--ls-accent);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+
+.ls-go:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.ls-go:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ls-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.7rem;
+}
+
+.ls-example {
+  font-size: 0.78rem;
+  padding: 0.35rem 0.7rem;
+  color: inherit;
+  opacity: 0.7;
+  background: transparent;
+  border: 1px dashed color-mix(in oklch, currentColor 22%, transparent);
+  border-radius: 999px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ls-example:hover {
+  opacity: 1;
+  border-color: var(--ls-accent);
+}
+
+/* the streamed steps lighting up in sequence */
+.ls-steps {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.ls-step {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  transition: opacity 240ms ease;
+}
+
+.ls-step--idle {
+  opacity: 0.35;
+}
+
+.ls-step--active {
+  opacity: 1;
+}
+
+.ls-step--done {
+  opacity: 0.85;
+}
+
+.ls-step-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+  background: color-mix(in oklch, currentColor 30%, transparent);
+}
+
+.ls-step--active .ls-step-dot {
+  background: var(--ls-accent);
+}
+
+.ls-step--done .ls-step-dot {
+  background: var(--ls-accent);
+  opacity: 0.6;
+}
+
+.ls-step-val {
+  font-weight: 600;
+  color: var(--ls-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ls-step--active .ls-step-dot {
+    animation: ls-ping 1s ease-in-out infinite;
+  }
+}
+
+@keyframes ls-ping {
+  50% {
+    transform: scale(1.5);
+    opacity: 0.5;
+  }
+}
+
+.ls-notice {
+  margin: 0.9rem 0 0;
+  font-size: 0.88rem;
+}
+
+.ls-notice--info {
+  opacity: 0.7;
+}
+
+.ls-notice--error {
+  color: oklch(58% 0.2 25);
+}
+
+/* the reveal */
+.ls-result {
+  margin-top: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.ls-result-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+}
+
+.ls-result-score {
+  font-size: clamp(2.2rem, 1.5rem + 3vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ls-accent);
+}
+
+.ls-result-feature {
+  font-size: 0.86rem;
+  opacity: 0.7;
+}
+
+.ls-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.8rem 1rem;
+  border-left: 3px solid var(--ls-accent);
+  background: color-mix(in oklch, currentColor 3%, transparent);
+  border-radius: 0 10px 10px 0;
+}
+
+.ls-copy-subject {
+  font-weight: 600;
+}
+
+.ls-copy-body {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
