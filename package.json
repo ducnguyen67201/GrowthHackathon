@@ -16,7 +16,8 @@
     "smoke:send": "tsx scripts/smoke-send.ts",
     "smoke:live": "tsx scripts/smoke-live.ts",
     "prewarm": "tsx scripts/prewarm-live.ts",
-    "coverage": "tsx scripts/coverage.ts"
+    "coverage": "tsx scripts/coverage.ts",
+    "video": "tsx scripts/make-video.ts"
   },
   "dependencies": {
     "convex": "^1.17.0",
@@ -28,7 +29,10 @@
     "satori": "^0.12.0",
     "@resvg/resvg-js": "^2.6.2",
     "nodemailer": "^6.9.16",
-    "imapflow": "^1.0.171"
+    "imapflow": "^1.0.171",
+    "remotion": "^4.0.0",
+    "@remotion/bundler": "^4.0.0",
+    "@remotion/renderer": "^4.0.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
