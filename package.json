@@ -14,6 +14,8 @@
     "smoke:brain": "tsx scripts/smoke-brain.ts",
     "smoke:dashboard": "tsx scripts/smoke-dashboard.ts",
     "smoke:send": "tsx scripts/smoke-send.ts",
+    "smoke:live": "tsx scripts/smoke-live.ts",
+    "prewarm": "tsx scripts/prewarm-live.ts",
     "coverage": "tsx scripts/coverage.ts"
   },
   "dependencies": {

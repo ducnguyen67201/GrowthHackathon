@@ -16,3 +16,6 @@ build/
 
 # Branch B smoke output
 .artifacts/
+
+# Branch E live-gen cache (rendered PNGs + lead data)
+.livecache/

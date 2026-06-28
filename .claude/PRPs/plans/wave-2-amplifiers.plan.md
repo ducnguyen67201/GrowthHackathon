@@ -22,6 +22,7 @@ Strict TS, Zod at boundaries, no `any`/casts, `"use node";` for Node-lib Convex 
 ---
 
 ## Branch E — `feat/live-gen`  (Gate 4, Sun 8–10am) — the verifiable WOW
+> **Status:** ✅ complete (branch `feat/live-gen`) → plan `.claude/PRPs/plans/completed/live-gen.plan.md`, report `.claude/PRPs/reports/live-gen-report.md`.
 **JTBD:** judge types a company → reasoning **streams** on screen → finished card in ~90s.
 - **ACTION:** `lib/livegen.ts` (orchestrate single-lead loop), `app/api/live/route.ts` (streaming SSE/`ReadableStream`), `app/live/page.tsx` (input + streamed reasoning + card).
 - **IMPLEMENT:** fire `socialLookup` trigger FIRST, run `enrich` in parallel while it cooks; stream `saw→inferred→angle` tokens to the client as they're produced; render Satori artifact; write a `creatives` row (`runs.type:"live"`). **Pre-render + cache** likely inputs (judges'/sponsors'/famous cos) keyed by domain → instant.

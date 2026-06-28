@@ -1,0 +1,114 @@
+/* Branch E live view. References Wave 0 tokens (styles/tokens.css); reuses the
+   dashboard's .reasoning* + .card-artifact for the result. Motion is opacity/
+   transform only (compositor-friendly). */
+
+.live {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-2);
+}
+
+.live-head {
+  margin-bottom: var(--space-3);
+}
+
+.live-form {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.live-input {
+  flex: 1;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.9rem;
+  font-size: var(--text-base);
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+.live-input:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.live-go {
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 1.4rem;
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.live-go:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.live-go:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.live-stage {
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  letter-spacing: 0.04em;
+  margin: 0 0 var(--space-2);
+}
+
+.live-steps {
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.live-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.9rem;
+  animation: live-step-in var(--dur) var(--ease) both;
+}
+
+@keyframes live-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-step {
+    animation: none;
+  }
+}
+
+.live-message {
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+  margin: var(--space-1) 0;
+}
+
+.live-link {
+  display: inline-block;
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
