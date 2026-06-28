@@ -13,3 +13,6 @@ build/
 # NOTE: convex/_generated IS committed (after first `npx convex dev`) so branch
 # agents get Convex types without each needing to auth + codegen.
 
+
+# Branch B smoke output
+.artifacts/
