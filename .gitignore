@@ -2,8 +2,8 @@ node_modules/
 .next/
 out/
 build/
-.env.local
-.env*.local
+.env
+.env.*
 .DS_Store
 *.log
 *.tsbuildinfo
