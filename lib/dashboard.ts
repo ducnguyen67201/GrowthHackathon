@@ -1,4 +1,4 @@
-import type { CopyVariant } from "@/convex/validators";
+import type { CopyVariant } from "../convex/validators"; // relative (not @/) so Convex can bundle this from creatives_read
 
 // Pure dashboard helpers — shared by the UI (SourcesPopover) and the read-side
 // mutation (creatives_read.editCopy), kept here so they're DRY and testable
