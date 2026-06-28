@@ -38,6 +38,21 @@ export const list = query({
   },
 });
 
+// One creative joined with its company + person — enough to reconstruct the lead
+// and re-render its artifact at send time (lib/sendgen). Storage URL not needed here.
+export const get = query({
+  args: { id: v.id("creatives") },
+  handler: async (ctx, { id }) => {
+    const c = await ctx.db.get(id);
+    if (!c) return null;
+    return {
+      ...c,
+      company: await ctx.db.get(c.companyId),
+      person: await ctx.db.get(c.personId),
+    };
+  },
+});
+
 export const approve = mutation({
   args: { id: v.id("creatives") },
   handler: async (ctx, { id }) => {

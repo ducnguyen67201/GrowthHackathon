@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api";
 import type { CreativeCard } from "./types";
 import { ReasoningChain } from "./ReasoningChain";
 import { SourcesPopover } from "./SourcesPopover";
+import { SendFunnel } from "./SendFunnel";
 
 type Props = {
   creative: CreativeCard;
@@ -19,9 +20,23 @@ function initials(name: string): string {
     .join("");
 }
 
+function timeAgo(ms: number): string {
+  const s = Math.round((Date.now() - ms) / 1000);
+  if (s < 60) return "just now";
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.round(h / 24)}d ago`;
+}
+
 export function Card({ creative }: Props) {
   const approve = useMutation(api.creatives_read.approve);
   const pickVariant = useMutation(api.creatives_read.pickVariant);
+
+  const [sending, setSending] = useState(false);
+  const [approving, setApproving] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const company = creative.company;
   const person = creative.person;
@@ -29,8 +44,40 @@ export function Card({ creative }: Props) {
   const canApprove =
     creative.status === "draft" || creative.status === "failed";
 
+  async function onApprove() {
+    if (approving) return;
+    setApproving(true);
+    setActionError(null);
+    try {
+      // Flips draft → approved. On the Draft filter the card then leaves the view;
+      // on All/Approved the button below becomes Send.
+      await approve({ id: creative._id });
+    } catch (e: unknown) {
+      setActionError(e instanceof Error ? e.message : "Approve failed");
+    } finally {
+      setApproving(false);
+    }
+  }
+
+  function onSend() {
+    if (sending) return;
+    // Open the funnel; it runs the real send (runSend) and animates the stages.
+    setActionError(null);
+    setSending(true);
+  }
+
   return (
     <article className="card" data-status={creative.status}>
+      {sending && (
+        <SendFunnel
+          title={`Sending to ${company?.name ?? "lead"}`}
+          creativeId={creative._id}
+          onClose={(ok) => {
+            setSending(false);
+            if (!ok) setActionError("Send failed — see details and retry.");
+          }}
+        />
+      )}
       <header className="card-head">
         <div className="card-logo" aria-hidden>
           {company?.logoUrl ? (
@@ -53,9 +100,18 @@ export function Card({ creative }: Props) {
             {person?.title ? ` · ${person.title}` : ""}
           </span>
         </div>
-        <span className={`badge badge-${creative.status}`}>
-          {creative.status}
-        </span>
+        <div className="card-meta">
+          <span className={`badge badge-${creative.status}`}>
+            {creative.status}
+          </span>
+          <time
+            className="card-time"
+            dateTime={new Date(creative._creationTime).toISOString()}
+            title={new Date(creative._creationTime).toLocaleString()}
+          >
+            {timeAgo(creative._creationTime)}
+          </time>
+        </div>
       </header>
 
       <ReasoningChain
@@ -97,14 +153,50 @@ export function Card({ creative }: Props) {
 
       <footer className="card-foot">
         <SourcesPopover sources={creative.sources} />
-        <button
-          type="button"
-          className="approve"
-          disabled={!canApprove}
-          onClick={() => approve({ id: creative._id })}
-        >
-          {creative.status === "approved" ? "Approved" : "Approve"}
-        </button>
+        <div className="card-actions">
+          {actionError && (
+            <span className="card-send-error" role="alert">
+              {actionError}
+            </span>
+          )}
+          {creative.status === "sent" ? (
+            <button type="button" className="approve" disabled>
+              Sent ✓
+            </button>
+          ) : creative.status === "approved" ? (
+            <button
+              type="button"
+              className="approve"
+              disabled={sending}
+              onClick={onSend}
+            >
+              {sending ? (
+                <>
+                  <span className="spinner" aria-hidden />
+                  Sending…
+                </>
+              ) : (
+                "Send"
+              )}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="approve"
+              disabled={!canApprove || approving}
+              onClick={onApprove}
+            >
+              {approving ? (
+                <>
+                  <span className="spinner" aria-hidden />
+                  Approving…
+                </>
+              ) : (
+                "Approve"
+              )}
+            </button>
+          )}
+        </div>
       </footer>
     </article>
   );

@@ -140,6 +140,15 @@ async function main() {
       );
   }
 
+  if (!hasKey) {
+    console.error(
+      "\n✖ smoke:brain did NOT test the real brain — OPENAI_API_KEY missing/unloaded.\n" +
+        "  Artifacts rendered from a FIXTURE; reasoning was never generated. This is a FAILURE, not a pass.\n" +
+        "  Run: set -a; . ./.env.local; set +a; pnpm smoke:brain",
+    );
+    process.exit(1);
+  }
+
   console.log(
     "\n✓ smoke:brain passed — eyeball .artifacts/*.png for pixel-perfect logo + text.",
   );

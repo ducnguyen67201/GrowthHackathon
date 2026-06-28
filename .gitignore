@@ -19,3 +19,6 @@ build/
 
 # Branch E live-gen cache (rendered PNGs + lead data)
 .livecache/
+
+# generated send-time videos
+/public/generated/

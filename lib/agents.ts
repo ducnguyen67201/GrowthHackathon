@@ -61,7 +61,8 @@ export async function reason(lead: EnrichedLead): Promise<ReasonResult> {
     "You are a sharp B2B SDR researcher. From the lead's REAL data, build a reasoning",
     "chain that earns a reply. Every step must trace to a cited field or post — never invent facts.",
     "Steps: saw (quote/cite a specific real field or post) → inferred (what it implies) →",
-    "pain (the concrete problem they feel now) → angle (the opening you'd lead with) →",
+    "pain (the concrete problem they feel now) → angle (a CONCRETE opening tied to the specific signal —",
+    "not a vague promise like 'leveraging deep insights' or 'tailored outreach'; name the actual thing) →",
     "whyThisAngle (MUST explicitly contrast and reject the obvious angle, e.g. 'congrats on",
     "the raise / the new role / the launch' — explain why your angle is sharper) → confidence (0..1).",
     "anchorFact: the single most specific, verifiable hook (a real quote or number).",
@@ -106,13 +107,18 @@ export async function writeCopy(
 ): Promise<CopyVariant[]> {
   const system = [
     "Write 2 cold-email variants for this lead. Warm, human, specific — open on the chosen angle,",
-    "reference the real anchor fact, no fluff, no 'I hope this finds you well', no fake personalization.",
+    "reference the real signal below, no fluff, no 'I hope this finds you well', no fake personalization.",
+    "HARD RULE: reference ONLY the real signal provided. NEVER claim research, data, insights, or",
+    "knowledge you were not given — no 'I've looked into your projects', no 'I have insights about X',",
+    "no invented specifics. If you have no concrete fact for a sentence, speak to their stated situation,",
+    "not a fabricated capability of yours.",
     "Subjects lowercase and conversational. Bodies 2-4 short sentences ending in a low-friction ask.",
     "Both variants share the angle but differ in opening and ask.",
   ].join(" ");
 
   const user = [
     `lead: ${lead.name}${lead.title ? `, ${lead.title}` : ""} at ${lead.company}`,
+    `the real signal you may reference (cite ONLY this): ${r.saw}`,
     `angle: ${r.angle}`,
     `pain: ${r.pain}`,
     `why this angle: ${r.whyThisAngle}`,

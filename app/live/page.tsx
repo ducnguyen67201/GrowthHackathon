@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { ReasoningChain } from "@/components/ReasoningChain";
+import { Card } from "@/components/Card";
+import type { CreativeCard } from "@/components/types";
 import type { Reasoning } from "@/lib/schemas";
 import type { LiveEvent } from "@/lib/livegen";
 import "@/components/dashboard.css"; // reuse .reasoning* + .card-artifact styling
@@ -25,17 +29,44 @@ const STAGE_TEXT: Record<string, string> = {
   rendering: "Rendering the card…",
 };
 
+// The visible pipeline. Each gen streams through these; the bar fills as they arrive.
+type StageKey = "discovering" | "reasoning" | "rendering" | "done";
+const STAGE_STEPS: { key: StageKey; label: string }[] = [
+  { key: "discovering", label: "Discover" },
+  { key: "reasoning", label: "Reason" },
+  { key: "rendering", label: "Render" },
+];
+const STAGE_PCT: Record<StageKey, number> = {
+  discovering: 28,
+  reasoning: 62,
+  rendering: 88,
+  done: 100,
+};
+
+const EXAMPLES = ["Vercel", "Stripe", "Linear", "Notion"];
+
 export default function LivePage() {
   const [query, setQuery] = useState("");
   const [running, setRunning] = useState(false);
   const [stage, setStage] = useState<string | null>(null);
+  const [stageKey, setStageKey] = useState<StageKey | null>(null);
   const [steps, setSteps] = useState<Partial<Record<keyof Reasoning, string>>>(
     {},
   );
   const [reasoning, setReasoning] = useState<Reasoning | null>(null);
   const [anchorFact, setAnchorFact] = useState("");
   const [creativeId, setCreativeId] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  // "empty" = a clean no-result (no company / too thin) — neutral, not a failure.
+  // "error" = something actually broke.
+  const [notice, setNotice] = useState<{
+    tone: "empty" | "error";
+    text: string;
+  } | null>(null);
+
+  // Every live run is persisted to Convex (see lib/livegen persist()). Subscribe to
+  // the newest few so this page survives a refresh instead of looking empty.
+  const recent = useQuery(api.creatives_read.list, {}) as
+    CreativeCard[] | undefined;
 
   function handle(ev: LiveEvent) {
     if ("step" in ev) {
@@ -47,18 +78,32 @@ export default function LivePage() {
       case "reasoning":
       case "rendering":
         setStage(STAGE_TEXT[ev.stage] ?? ev.stage);
+        setStageKey(ev.stage);
         break;
       case "done":
         setReasoning(ev.reasoning);
         setAnchorFact(ev.anchorFact);
         setCreativeId(ev.creativeId);
         setStage(ev.cached ? "Done · instant (cached)" : "Done");
+        setStageKey("done");
         break;
       case "skip":
-        setMessage(`Skipped — too thin for a non-generic angle: ${ev.why}`);
+        setNotice({
+          tone: "empty",
+          text: "Nothing to send here — the signal was too thin for a confident, non-generic angle.",
+        });
+        break;
+      case "notfound":
+        setNotice({
+          tone: "empty",
+          text: `Nothing found for “${ev.query}”. Try a company name (e.g. Vercel) rather than a URL.`,
+        });
         break;
       case "error":
-        setMessage(`Error: ${ev.message}`);
+        setNotice({
+          tone: "error",
+          text: `Something went wrong: ${ev.message}`,
+        });
         break;
     }
   }
@@ -68,11 +113,12 @@ export default function LivePage() {
     if (!query.trim() || running) return;
     setRunning(true);
     setStage(null);
+    setStageKey(null);
     setSteps({});
     setReasoning(null);
     setAnchorFact("");
     setCreativeId(null);
-    setMessage(null);
+    setNotice(null);
 
     try {
       const res = await fetch("/api/live", {
@@ -81,7 +127,7 @@ export default function LivePage() {
         body: JSON.stringify({ query: query.trim() }),
       });
       if (!res.ok || !res.body) {
-        setMessage(`Request failed (${res.status})`);
+        setNotice({ tone: "error", text: `Request failed (${res.status})` });
         return;
       }
       const reader = res.body.getReader();
@@ -98,13 +144,23 @@ export default function LivePage() {
         }
       }
     } catch (err: unknown) {
-      setMessage(err instanceof Error ? err.message : "Stream failed");
+      setNotice({
+        tone: "error",
+        text: err instanceof Error ? err.message : "Stream failed",
+      });
     } finally {
       setRunning(false);
     }
   }
 
   const arrivedSteps = STEP_LABELS.filter(({ key }) => steps[key]);
+
+  const isDone = stageKey === "done";
+  const activeIndex = STAGE_STEPS.findIndex((s) => s.key === stageKey);
+  const pct = stageKey ? STAGE_PCT[stageKey] : running ? 8 : 0;
+  // Hide the bar once a terminal notice (not-found / error) lands, so it doesn't
+  // freeze mid-fill — the notice takes over.
+  const showProgress = (running || stageKey !== null) && notice === null;
 
   return (
     <main className="live">
@@ -123,7 +179,7 @@ export default function LivePage() {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="e.g. Vercel"
+          placeholder="Type a company name…"
           autoComplete="off"
           aria-label="Company"
         />
@@ -132,14 +188,63 @@ export default function LivePage() {
           className="live-go"
           disabled={!query.trim() || running}
         >
-          {running ? "Running…" : "Run"}
+          {running ? (
+            <>
+              <span className="spinner" aria-hidden />
+              Running…
+            </>
+          ) : (
+            "Run"
+          )}
         </button>
       </form>
 
-      {stage && (
-        <p className="live-stage" role="status">
-          {stage}
-        </p>
+      {!running && !reasoning && !stage && (
+        <div className="live-examples">
+          <span className="live-examples-label">Try</span>
+          {EXAMPLES.map((ex) => (
+            <button
+              key={ex}
+              type="button"
+              className="live-example"
+              onClick={() => setQuery(ex)}
+            >
+              {ex}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {showProgress && (
+        <div
+          className="live-progress"
+          role="status"
+          aria-label={stage ?? "Working…"}
+        >
+          <div className="live-progress-track">
+            <div
+              className={`live-progress-fill${isDone ? " is-done" : " is-working"}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <ol className="live-progress-steps">
+            {STAGE_STEPS.map((s, i) => {
+              const done = isDone || (activeIndex > -1 && i < activeIndex);
+              const active = !isDone && i === activeIndex;
+              return (
+                <li
+                  key={s.key}
+                  className={`live-progress-step${done ? " is-done" : ""}${
+                    active ? " is-active" : ""
+                  }`}
+                >
+                  {s.label}
+                </li>
+              );
+            })}
+          </ol>
+          {stage && <p className="live-progress-caption">{stage}</p>}
+        </div>
       )}
 
       {reasoning ? (
@@ -166,16 +271,37 @@ export default function LivePage() {
         />
       )}
 
-      {message && (
-        <p className="live-message" role="alert">
-          {message}
-        </p>
+      {notice && (
+        <div
+          className={`live-notice live-notice--${notice.tone}`}
+          role={notice.tone === "error" ? "alert" : "status"}
+        >
+          <span className="live-notice-icon" aria-hidden>
+            {notice.tone === "error" ? "!" : "∅"}
+          </span>
+          <span>{notice.text}</span>
+        </div>
       )}
 
       {creativeId && (
         <a className="live-link" href="/">
           ↗ See it in the Pipeline
         </a>
+      )}
+
+      {recent && recent.length > 0 && (
+        <section className="live-recent">
+          <h2 className="live-recent-title">Recent runs</h2>
+          <p className="live-recent-sub">
+            Saved automatically — these survive a refresh. Full history under{" "}
+            <a href="/">Pipeline</a>.
+          </p>
+          <div className="dash-grid">
+            {recent.slice(0, 6).map((c) => (
+              <Card key={c._id} creative={c} />
+            ))}
+          </div>
+        </section>
       )}
     </main>
   );
