@@ -1,17 +1,32 @@
-// Wave 0 shell. The dashboard (Wave 1 / branch C) replaces this with the
-// real-time pipeline grid over `creatives`.
+import { Pipeline } from "@/components/Pipeline";
+import "@/components/dashboard.css";
+
+// Server gate: only mount the realtime grid when Convex is configured. Mirrors
+// ConvexClientProvider's own guard so `pnpm build` (no NEXT_PUBLIC_CONVEX_URL)
+// prerenders the shell instead of throwing inside useQuery.
 export default function Home() {
+  const configured = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
+
   return (
-    <main style={{ maxWidth: 880, margin: "0 auto", padding: "var(--space-4) var(--space-2)" }}>
-      <p style={{ color: "var(--color-accent)", fontSize: "var(--text-sm)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-        Cutthrough
-      </p>
-      <h1 style={{ fontSize: "var(--text-xl)", lineHeight: 1.05, margin: "var(--space-1) 0 var(--space-2)" }}>
-        The AI SDR that does the homework — and proves it.
-      </h1>
-      <p style={{ color: "var(--color-text-dim)", maxWidth: 560 }}>
-        Foundation is up. The pipeline dashboard ships in Wave 1 (branch <code>feat/dashboard</code>).
-      </p>
+    <main className="dash">
+      <header className="dash-head">
+        <p className="dash-kicker">Cutthrough</p>
+        <h1 className="dash-title">Pipeline</h1>
+        <p className="dash-sub">
+          Every card leads with the reasoning — what we saw, what we inferred,
+          and why this angle beats the obvious one.
+        </p>
+      </header>
+
+      {configured ? (
+        <Pipeline />
+      ) : (
+        <p className="dash-empty">
+          Convex isn’t connected yet. Run <code>npx convex dev</code> (sets{" "}
+          <code>NEXT_PUBLIC_CONVEX_URL</code>), then{" "}
+          <code>npx convex run seed:run</code> to load sample leads.
+        </p>
+      )}
     </main>
   );
 }

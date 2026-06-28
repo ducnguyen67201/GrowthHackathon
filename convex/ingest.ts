@@ -3,6 +3,7 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { discoverAndEnrich } from "../lib/fiber";
 
 // Branch A — ICP/company string → enriched lead persisted to Convex.
@@ -12,7 +13,9 @@ export const ingestLead = action({
   args: { query: v.string() },
   handler: async (ctx, { query }) => {
     const lead = await discoverAndEnrich(query);
-    const companyId = await ctx.runMutation(api.companies.upsert, {
+    // Explicit Id annotations break the action's circular type inference
+    // (return type → api → this module → return type). Standard Convex remedy.
+    const companyId: Id<"companies"> = await ctx.runMutation(api.companies.upsert, {
       fiberId: lead.fiberId,
       name: lead.company,
       domain: lead.domain,
@@ -20,7 +23,7 @@ export const ingestLead = action({
       logoUrl: lead.logoUrl,
       signalSource: "live",
     });
-    const personId = await ctx.runMutation(api.people.upsert, {
+    const personId: Id<"people"> = await ctx.runMutation(api.people.upsert, {
       companyId,
       fiberId: lead.fiberId,
       name: lead.name,
