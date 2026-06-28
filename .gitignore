@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+build/
+.env.local
+.env*.local
+.DS_Store
+*.log
+*.tsbuildinfo
+.vercel
+!.env.example
+
+# NOTE: convex/_generated IS committed (after first `npx convex dev`) so branch
+# agents get Convex types without each needing to auth + codegen.
+

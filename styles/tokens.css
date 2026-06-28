@@ -1,0 +1,37 @@
+/* Design tokens — defined in Wave 0 so all UI branches (C/E/G) stay consistent.
+   The polish branch refines; branches reference these, never hardcode palette. */
+:root {
+  /* surfaces */
+  --color-bg: oklch(20% 0.02 260);
+  --color-surface: oklch(26% 0.02 260);
+  --color-surface-2: oklch(31% 0.025 260);
+  --color-border: oklch(40% 0.02 260);
+
+  /* text */
+  --color-text: oklch(96% 0.01 260);
+  --color-text-dim: oklch(74% 0.02 260);
+
+  /* accent — the "cyborg" signal color */
+  --color-accent: oklch(72% 0.18 150);
+  --color-accent-2: oklch(70% 0.2 280);
+  --color-danger: oklch(64% 0.22 25);
+
+  /* type scale */
+  --text-sm: clamp(0.82rem, 0.8rem + 0.1vw, 0.9rem);
+  --text-base: clamp(0.95rem, 0.9rem + 0.2vw, 1.05rem);
+  --text-lg: clamp(1.2rem, 1.05rem + 0.6vw, 1.6rem);
+  --text-xl: clamp(1.8rem, 1.3rem + 2vw, 3rem);
+
+  /* rhythm */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2.5rem;
+  --radius: 14px;
+  --radius-sm: 8px;
+
+  /* motion (compositor-friendly only) */
+  --dur-fast: 150ms;
+  --dur: 280ms;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}

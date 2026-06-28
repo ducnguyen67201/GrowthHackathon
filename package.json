@@ -1,0 +1,41 @@
+{
+  "name": "cutthrough",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "convex": "convex dev",
+    "typecheck": "tsc --noEmit",
+    "lint": "next lint",
+    "format": "prettier --write .",
+    "smoke:fiber": "tsx scripts/smoke-fiber.ts",
+    "smoke:brain": "tsx scripts/smoke-brain.ts",
+    "coverage": "tsx scripts/coverage.ts"
+  },
+  "dependencies": {
+    "convex": "^1.17.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "openai": "^4.77.0",
+    "zod": "^3.24.0",
+    "satori": "^0.12.0",
+    "@resvg/resvg-js": "^2.6.2",
+    "nodemailer": "^6.9.16",
+    "imapflow": "^1.0.171"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/nodemailer": "^6.4.17",
+    "prettier": "^3.4.0",
+    "tsx": "^4.19.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp", "@resvg/resvg-js"]
+  }
+}
