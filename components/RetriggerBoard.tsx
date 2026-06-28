@@ -73,17 +73,44 @@ export function RetriggerBoard() {
         return (
           <li
             key={item._id}
-            className={`rt-row rt-row--enter${i === 0 ? " rt-row--top" : ""}`}
+            className={`rt-row rt-row--enter${i === 0 && !item.isWatch ? " rt-row--top" : ""}${item.isLive && !item.isWatch ? " rt-row--live" : ""}${item.isWatch ? " rt-row--watch" : ""}`}
             style={{ animationDelay: `${i * STAGGER_MS}ms` }}
           >
             <div className="rt-rank">
               <span className="rt-rank-num">{i + 1}</span>
-              <ScoreNumber pct={pct} />
+              {item.isWatch ? (
+                <span className="rt-score rt-score--watch" title="On watch — not re-winnable yet">
+                  ⏳
+                </span>
+              ) : (
+                <ScoreNumber pct={pct} />
+              )}
             </div>
 
             <div className="rt-body">
               <div className="rt-who">
                 <strong className="rt-account">{item.account}</strong>
+                {item.isLive && !item.isWatch && (
+                  <span className="rt-new" title="Just ingested from a call">
+                    NEW · just ingested
+                  </span>
+                )}
+                {item.isWatch && (
+                  <span className="rt-watch-badge" title="Ingested, but no shipped fix resolves it yet">
+                    ON WATCH · no fix yet
+                  </span>
+                )}
+                {item.isLive &&
+                  (item.analyzedAt ? (
+                    <span className="rt-analyzed" title="LLM analysis complete">
+                      ✓ analyzed
+                    </span>
+                  ) : (
+                    <span className="rt-analyzing" role="status">
+                      <span className="rt-analyzing-spin" aria-hidden />
+                      analyzing…
+                    </span>
+                  ))}
                 <span className="rt-contact">{item.contact}</span>
                 {item.lostDate && <span className="rt-lost">lost {item.lostDate}</span>}
               </div>
@@ -102,29 +129,48 @@ export function RetriggerBoard() {
                 )}
               </div>
 
-              <ReasoningChain reasoning={item.reasoning} anchorFact={item.anchorFact} />
+              {item.analysisInsight && (
+                <p className="rt-ai-insight">
+                  <span className="rt-ai-tag" aria-hidden>
+                    AI read
+                  </span>
+                  {item.analysisInsight}
+                </p>
+              )}
 
-              {item.breakdown && (
-                <div className="rt-bar" aria-label="why this score">
-                  {BAR_PARTS.map((p) => {
-                    const w = item.breakdown ? item.breakdown[p.key] : 0;
-                    return (
-                      w > 0 && (
-                        <span
-                          key={p.key}
-                          className={`rt-bar-seg rt-bar-seg--${p.key}`}
-                          style={{ flexGrow: w }}
-                          title={`${p.label}: +${Math.round(w * 100)}`}
-                        />
-                      )
-                    );
-                  })}
-                </div>
+              {item.isWatch ? (
+                <p className="rt-watch-note">
+                  Nothing you&rsquo;ve shipped resolves this yet — it&rsquo;s on the
+                  brain, on watch. The day you ship the fix, it lights up here and
+                  drafts its own re-open.
+                </p>
+              ) : (
+                <>
+                  <ReasoningChain reasoning={item.reasoning} anchorFact={item.anchorFact} />
+
+                  {item.breakdown && (
+                    <div className="rt-bar" aria-label="why this score">
+                      {BAR_PARTS.map((p) => {
+                        const w = item.breakdown ? item.breakdown[p.key] : 0;
+                        return (
+                          w > 0 && (
+                            <span
+                              key={p.key}
+                              className={`rt-bar-seg rt-bar-seg--${p.key}`}
+                              style={{ flexGrow: w }}
+                              title={`${p.label}: +${Math.round(w * 100)}`}
+                            />
+                          )
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
               )}
 
               <DrillDown item={item} />
 
-              {item.objection && (
+              {!item.isWatch && item.objection && (
                 <Link
                   className="rt-relive"
                   href={{

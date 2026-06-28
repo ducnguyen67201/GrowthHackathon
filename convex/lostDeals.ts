@@ -510,8 +510,7 @@ export const board = query({
     const creatives = await ctx.db.query("creatives").collect();
     const changelog = await ctx.db.query("changelog").collect();
     const retriggers = creatives.filter((c) => c.retriggerScore !== undefined);
-    retriggers.sort((a, b) => (b.retriggerScore ?? 0) - (a.retriggerScore ?? 0));
-    return Promise.all(
+    const rows = await Promise.all(
       retriggers.map(async (c) => {
         const company = await ctx.db.get(c.companyId);
         const person = await ctx.db.get(c.personId);
@@ -542,8 +541,183 @@ export const board = query({
           fixFeature: fix?.feature ?? null,
           fixShippedAt: fix?.shippedAt ?? null,
           fixSolves: fix?.description ?? null,
+          // a deal that came in via the "just got off a call" intake — float it to the
+          // top + badge it so the operator sees their fresh ingest land, not buried by score.
+          isLive: company?.signalSource === "live-call",
+          isWatch: false,
+          analyzedAt: deal?.analyzedAt ?? null,
+          analysisInsight: deal?.analysisInsight ?? null,
         };
       }),
     );
+
+    // Non-winnable ingests: a call the user just dropped in whose objection nothing we've
+    // shipped resolves yet (no fix → no creative). It would otherwise vanish from this board.
+    // Surface it as an honest "on watch" row so every ingest lands somewhere visible.
+    const liveCompanyIds = new Set(
+      (await ctx.db.query("companies").collect())
+        .filter((c) => c.signalSource === "live-call")
+        .map((c) => String(c._id)),
+    );
+    const ripeDealIds = new Set(
+      retriggers.map((c) => (c.lostDealId ? String(c.lostDealId) : "")),
+    );
+    const watchDeals = (await ctx.db.query("lostDeals").collect()).filter(
+      (d) =>
+        d.companyId &&
+        liveCompanyIds.has(String(d.companyId)) &&
+        !ripeDealIds.has(String(d._id)),
+    );
+    const watchRows = watchDeals.map((d) => ({
+      _id: d._id,
+      score: 0,
+      breakdown: null,
+      externalSignal: d.externalSignal ?? null,
+      reasoning: {
+        saw: d.lostReason,
+        inferred: `Deal died on ${d.objectionCategory ?? "an unclear blocker"} — ${d.objection ?? "unclear blocker"}.`,
+        pain: d.objection ?? "unclear blocker",
+        angle: "No shipped feature resolves this yet.",
+        whyThisAngle:
+          "On watch — the day you ship the fix, this lights up and drafts itself.",
+        confidence: 0,
+      },
+      anchorFact: "On watch — no shipped fix dissolves this yet.",
+      copyVariants: [],
+      status: "watch",
+      account: d.account,
+      dealAccount: d.account,
+      contact: d.contact,
+      value: d.value ?? null,
+      lostDate: d.lostDate ?? null,
+      objection: d.objection ?? null,
+      objectionCategory: d.objectionCategory ?? null,
+      transcript: d.transcript ?? null,
+      transcriptDate: d.transcriptDate ?? null,
+      externalSignalType: d.externalSignalType ?? null,
+      fixFeature: null,
+      fixShippedAt: null,
+      fixSolves: null,
+      isLive: true,
+      isWatch: true,
+      analyzedAt: d.analyzedAt ?? null,
+      analysisInsight: d.analysisInsight ?? null,
+    }));
+
+    // live ingests first (newest work the user just did); among those, winnable above
+    // on-watch; then everything else by re-win score.
+    const all = [...rows, ...watchRows];
+    all.sort(
+      (a, b) =>
+        Number(b.isLive) - Number(a.isLive) ||
+        Number(a.isWatch) - Number(b.isWatch) ||
+        b.score - a.score,
+    );
+    return all;
+  },
+});
+
+// --- Autonomous analytics pass (driven by convex/pipeline.ts action + cron) ---
+
+// One deal's context for the Fiber fetch — account/domain to enrich, category to re-check.
+export const getForAnalysis = query({
+  args: { lostDealId: v.id("lostDeals") },
+  handler: async (ctx, { lostDealId }) => {
+    const d = await ctx.db.get(lostDealId);
+    if (!d) return null;
+    return {
+      account: d.account,
+      domain: d.domain ?? null,
+      objectionCategory: d.objectionCategory ?? null,
+      externalSignal: d.externalSignal ?? null,
+      externalSignalType: d.externalSignalType ?? null,
+      companyId: d.companyId ?? null,
+    };
+  },
+});
+
+// Deals still waiting on their first analytics pass — the cron sweeps these. Bounded so a
+// big graveyard never fans out into a huge batch in one tick.
+export const pendingAnalysis = query({
+  args: {},
+  handler: async (ctx) => {
+    const deals = await ctx.db.query("lostDeals").collect();
+    return deals
+      .filter((d) => d.analyzedAt === undefined)
+      .slice(0, 8)
+      .map((d) => d._id);
+  },
+});
+
+// Full context for the LLM batch: every un-analyzed deal with its real call transcript,
+// objection, why-now signal, value, and whether a shipped fix resolves it. The analytics
+// action groups ALL of these into one prompt (convex/pipeline.ts).
+export const pendingContext = query({
+  args: {},
+  handler: async (ctx) => {
+    const [deals, changelog] = await Promise.all([
+      ctx.db.query("lostDeals").collect(),
+      ctx.db.query("changelog").collect(),
+    ]);
+    return deals
+      .filter((d) => d.analyzedAt === undefined)
+      .slice(0, 8)
+      .map((d) => {
+        const cat = d.objectionCategory;
+        const fix = cat
+          ? changelog.find((f) => f.solves.includes(cat))
+          : undefined;
+        return {
+          id: d._id,
+          account: d.account,
+          objection: d.objection ?? d.lostReason,
+          value: d.value ?? 0,
+          transcript: (d.transcript ?? "").slice(0, 1200),
+          externalSignal: d.externalSignal ?? null,
+          fixFeature: fix?.feature ?? null,
+        };
+      });
+  },
+});
+
+// Write the analytics result: refresh the why-now signal + firmographics, stamp analyzedAt,
+// and re-score the deal's creative so a fresh signal actually moves its rank on the board.
+export const applyAnalysis = mutation({
+  args: {
+    lostDealId: v.id("lostDeals"),
+    externalSignal: v.optional(v.string()),
+    externalSignalType: v.optional(v.string()),
+    insight: v.optional(v.string()), // the LLM's grounded one-line read
+  },
+  handler: async (ctx, a) => {
+    const deal = await ctx.db.get(a.lostDealId);
+    if (!deal) return { ok: false };
+
+    await ctx.db.patch(a.lostDealId, {
+      externalSignal: a.externalSignal ?? deal.externalSignal,
+      externalSignalType: a.externalSignalType ?? deal.externalSignalType,
+      analysisInsight: a.insight ?? deal.analysisInsight,
+      analyzedAt: Date.now(),
+    });
+
+    // re-score the creative now that the signal may have changed (external weight 0.225).
+    const sig = a.externalSignal ?? deal.externalSignal;
+    const creatives = await ctx.db.query("creatives").collect();
+    const creative = creatives.find(
+      (c) => c.lostDealId && String(c.lostDealId) === String(a.lostDealId),
+    );
+    if (creative) {
+      const ext = sig ? 0.225 : 0;
+      const base = (creative.retriggerBreakdown ?? {}) as Record<string, number>;
+      const recency = base.recency ?? 0.15;
+      const sim = base.simToWon ?? 0.15;
+      const score = Math.round((0.4 + ext + recency + sim) * 1000) / 1000;
+      await ctx.db.patch(creative._id, {
+        retriggerScore: score,
+        retriggerBreakdown: { solved: 0.4, external: ext, recency, simToWon: sim },
+        externalSignal: sig,
+      });
+    }
+    return { ok: true, signal: sig };
   },
 });

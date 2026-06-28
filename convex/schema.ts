@@ -83,6 +83,11 @@ export default defineSchema({
     objection: v.optional(v.string()),
     objectionCategory: v.optional(v.string()),
     objectionCluster: v.optional(v.string()),
+    // set by the autonomous analytics pass (convex/pipeline.ts) once it has analyzed the deal.
+    // Null → the board shows "⟳ analyzing…".
+    analyzedAt: v.optional(v.number()),
+    // the LLM's grounded one-line read for THIS deal (why it's worth a call now / the angle).
+    analysisInsight: v.optional(v.string()),
   }),
 
   // What shipped recently — the internal trigger an objection can dissolve against.

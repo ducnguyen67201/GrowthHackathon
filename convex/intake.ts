@@ -1,5 +1,6 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { api } from "./_generated/api";
 
 // "I just got off a call." Drop a raw transcript in → the system reads the objection that
 // killed it, files it into the dead pipeline, and (because every cockpit panel is a reactive
@@ -126,6 +127,23 @@ function scoreDeal(category: string, hasSignal: boolean): number {
   return round3(0.4 + (hasSignal ? 0.225 : 0) + 0.15 + sim);
 }
 
+// The "why-now" trigger the pipeline enriches a fresh call with. Provided by the call →
+// use it. Otherwise we discover one — deterministic for the demo (no key needed), keyed on
+// the account so it's stable. ponytail: swap for a real lib/fiber.ts lookup behind a Node
+// action when FIBER_API_KEY is set; nothing downstream changes (externalSignal is the contract).
+const WHY_NOW: [string, string][] = [
+  ["just closed a $30M Series B", "funding_round"],
+  ["just hired their first CISO", "hiring"],
+  ["their old champion just came back as VP Engineering", "champion_job_change"],
+  ["just kicked off a company-wide HIPAA compliance push", "compliance_initiative"],
+  ["nearly doubled headcount in the last two quarters", "rapid_growth"],
+  ["just signed a major hospital-system contract", "new_logo"],
+];
+function discoverSignal(account: string, category: string): [string, string] {
+  const i = Math.floor(hash01(account + category) * WHY_NOW.length) % WHY_NOW.length;
+  return WHY_NOW[i] ?? WHY_NOW[0]!;
+}
+
 export const ingestCall = mutation({
   args: {
     account: v.string(),
@@ -141,15 +159,25 @@ export const ingestCall = mutation({
     const today = new Date(now).toISOString().slice(0, 10);
     const read = readObjection(a.transcript);
 
+    // Enrichment step: find the "why-now" trigger. The call carried one → use it; else the
+    // pipeline discovers a fresh signal. `discoveredSignal` lets the UI show "Fiber found …".
+    const [discoText, discoType] = discoverSignal(a.account, read.category);
+    const sigText = a.externalSignal ?? discoText;
+    const sigType = a.externalSignalType ?? discoType;
+    const discoveredSignal = !a.externalSignal;
+
     // a shipped feature that dissolves this objection? — the same category→solves join the
     // brain graph and board use, so a ripe ingested deal lights up identically to a seeded one.
     const changelog = await ctx.db.query("changelog").collect();
     const fix = changelog.find((f) => f.solves.includes(read.category));
 
     // dedupe: clicking "ingest" twice (or re-running the demo) shouldn't pile up the account.
+    // `replaced` lets the UI say "updated in place" instead of looking like nothing happened.
     const TAG = "live-call";
+    let replaced = false;
     for (const c of await ctx.db.query("companies").collect()) {
       if (c.signalSource !== TAG || c.name !== a.account) continue;
+      replaced = true;
       for (const cr of await ctx.db.query("creatives").collect())
         if (cr.companyId === c._id) await ctx.db.delete(cr._id);
       for (const d of await ctx.db.query("lostDeals").collect())
@@ -187,8 +215,8 @@ export const ingestCall = mutation({
       transcriptDate: today,
       objection: read.objection,
       objectionCategory: read.category,
-      externalSignal: a.externalSignal,
-      externalSignalType: a.externalSignalType,
+      externalSignal: sigText,
+      externalSignalType: sigType,
       companyId,
       personId,
     });
@@ -199,10 +227,10 @@ export const ingestCall = mutation({
     // shipped the fix). The day a feature solves this category, it lights up on its own.
     let score: number | null = null;
     if (fix) {
-      score = scoreDeal(read.category, Boolean(a.externalSignal));
+      score = scoreDeal(read.category, Boolean(sigText));
       const first = a.contact.split(/\s+/)[0] ?? a.contact;
-      const signalLine = a.externalSignal
-        ? ` I also noticed ${a.account} ${a.externalSignal} — feels like the timing finally lines up.`
+      const signalLine = sigText
+        ? ` I also noticed ${a.account} ${sigText} — feels like the timing finally lines up.`
         : "";
       await ctx.db.insert("creatives", {
         companyId,
@@ -212,8 +240,8 @@ export const ingestCall = mutation({
           saw: `${a.account} passed today: "${read.quote}"`,
           inferred: `Deal died on ${read.category} — ${read.objection}.`,
           pain: read.objection,
-          angle: a.externalSignal
-            ? `We shipped ${fix.feature} — and ${a.externalSignal}.`
+          angle: sigText
+            ? `We shipped ${fix.feature} — and ${sigText}.`
             : `We shipped ${fix.feature}.`,
           whyThisAngle: `${fix.feature} resolves the exact blocker they raised on the call — returning with the specific reason they said no, now fixed, beats a generic "just checking in".`,
           confidence: score,
@@ -231,13 +259,31 @@ export const ingestCall = mutation({
         retriggerScore: score,
         retriggerBreakdown: {
           solved: 0.4,
-          external: a.externalSignal ? 0.225 : 0,
+          external: sigText ? 0.225 : 0,
           recency: 0.15,
-          simToWon: round3(score - 0.4 - (a.externalSignal ? 0.225 : 0) - 0.15),
+          simToWon: round3(score - 0.4 - (sigText ? 0.225 : 0) - 0.15),
         },
-        externalSignal: a.externalSignal,
+        externalSignal: sigText,
         createdAt: now,
       });
+    }
+
+    // Kick the autonomous analytics pass — it groups every un-analyzed deal into one LLM
+    // prompt, reads the transcripts, and writes a grounded re-win insight back, stamping
+    // analyzedAt so the board flips "⟳ analyzing…" → "✓ analyzed" without a manual trigger.
+    await ctx.scheduler.runAfter(1000, api.pipeline.analyzePipeline, {});
+
+    // Authoritative post-write totals — the UI shows these as proof the row is in the DB
+    // and the dashboard counts moved. Same shape as flowCounts, computed AFTER the inserts.
+    const allDeals = await ctx.db.query("lostDeals").collect();
+    const allCreatives = await ctx.db.query("creatives").collect();
+    const scoredCreatives = allCreatives.filter(
+      (c) => c.retriggerScore !== undefined,
+    );
+    let recoveredValue = 0;
+    for (const c of scoredCreatives) {
+      const dd = c.lostDealId ? await ctx.db.get(c.lostDealId) : null;
+      recoveredValue += dd?.value ?? 0;
     }
 
     return {
@@ -251,7 +297,39 @@ export const ingestCall = mutation({
       featureShippedAt: fix?.shippedAt ?? null,
       value: a.value ?? 0,
       score,
+      signal: sigText,
+      signalType: sigType,
+      discoveredSignal, // true → the pipeline found it (not carried by the call)
+      replaced,
+      // proof it landed: the live pipeline numbers, straight from the DB post-write.
+      totals: {
+        graveyard: allDeals.length,
+        scored: scoredCreatives.length,
+        recoveredValue,
+      },
     };
+  },
+});
+
+// Undo a mis-ingested call: remove the live-call account and everything it created
+// (creative + lost deal + person + company). Same key the ingest dedupe uses.
+export const removeIngested = mutation({
+  args: { account: v.string() },
+  handler: async (ctx, { account }) => {
+    const TAG = "live-call";
+    let removed = 0;
+    for (const c of await ctx.db.query("companies").collect()) {
+      if (c.signalSource !== TAG || c.name !== account) continue;
+      for (const cr of await ctx.db.query("creatives").collect())
+        if (cr.companyId === c._id) await ctx.db.delete(cr._id);
+      for (const d of await ctx.db.query("lostDeals").collect())
+        if (d.companyId === c._id) await ctx.db.delete(d._id);
+      for (const p of await ctx.db.query("people").collect())
+        if (p.companyId === c._id) await ctx.db.delete(p._id);
+      await ctx.db.delete(c._id);
+      removed++;
+    }
+    return { removed };
   },
 });
 
