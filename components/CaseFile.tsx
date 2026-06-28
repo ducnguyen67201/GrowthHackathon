@@ -42,6 +42,10 @@ export type BoardItem = {
   fixFeature: string | null;
   fixShippedAt: string | null;
   fixSolves: string | null;
+  isLive?: boolean; // came in via the "just got off a call" intake — badged NEW on the board
+  isWatch?: boolean; // ingested but no shipped fix resolves it yet — "on watch", not re-winnable
+  analyzedAt?: number | null; // null while the autonomous LLM analytics pass is still running
+  analysisInsight?: string | null; // the model's grounded re-win read for this deal
 };
 
 export const BAR_PARTS: { key: keyof Breakdown; label: string }[] = [

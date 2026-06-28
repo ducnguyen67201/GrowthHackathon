@@ -571,6 +571,145 @@
     0 10px 34px -14px color-mix(in oklch, oklch(62% 0.19 145) 42%, transparent);
 }
 
+/* a deal that just arrived from the call intake — make it unmistakable */
+.rt-row--live {
+  border-color: color-mix(in oklch, oklch(62% 0.19 145) 60%, transparent);
+  background: color-mix(in oklch, oklch(62% 0.19 145) 7%, var(--color-surface));
+}
+
+.rt-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: oklch(62% 0.19 145);
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* on-watch: an ingested call with no shipped fix yet — present but muted, no CTA */
+.rt-row--watch {
+  border-style: dashed;
+  border-color: color-mix(in oklch, var(--color-text-dim) 45%, var(--color-border));
+  background: var(--color-surface-2);
+}
+
+.rt-watch-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px dashed color-mix(in oklch, var(--color-text-dim) 60%, transparent);
+  color: var(--color-text-dim);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* autonomous analytics state — spins while the pipeline fetches Fiber, then confirms */
+.rt-analyzing {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in oklch, oklch(70% 0.14 230) 14%, var(--color-surface));
+  color: oklch(48% 0.13 230);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.rt-analyzing-spin {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  border: 2px solid color-mix(in oklch, oklch(48% 0.13 230) 30%, transparent);
+  border-top-color: oklch(48% 0.13 230);
+  animation: rt-spin 0.7s linear infinite;
+}
+.rt-analyzed {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  color: var(--color-text-dim);
+  font-size: 0.66rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* the model's grounded read for this deal — the real analysis output */
+.rt-ai-insight {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 0.5rem;
+  margin: 0.1rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid oklch(58% 0.16 290);
+  background: color-mix(in oklch, oklch(58% 0.16 290) 8%, var(--color-surface));
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  color: var(--color-text);
+}
+.rt-ai-tag {
+  flex: 0 0 auto;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: oklch(58% 0.16 290);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+@keyframes rt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rt-analyzing-spin {
+    animation: none;
+  }
+}
+
+.rt-score--watch {
+  font-size: 1.1rem;
+  opacity: 0.6;
+}
+
+.rt-watch-note {
+  margin: 0.2rem 0 0;
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  color: var(--color-text-dim);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rt-row--live {
+    animation: rt-live-pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes rt-live-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in oklch, oklch(62% 0.19 145) 40%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 0 5px color-mix(in oklch, oklch(62% 0.19 145) 0%, transparent);
+    }
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .rt-row--enter {
     animation: rt-enter 480ms cubic-bezier(0.16, 1, 0.3, 1) both;

@@ -23,6 +23,12 @@ type IngestResult = {
   featureShippedAt: string | null;
   value: number;
   score: number | null;
+  signal: string;
+  signalType: string;
+  discoveredSignal: boolean;
+  replaced: boolean;
+  // post-write pipeline totals — proof the row is in the DB and the dashboard moved.
+  totals: { graveyard: number; scored: number; recoveredValue: number };
 };
 
 type Sample = {
@@ -93,7 +99,13 @@ const PROVIDERS: Provider[] = [
   { id: "fireflies", name: "Fireflies", mark: "✦", hue: 95 },
 ];
 
-type Phase = "idle" | "reading" | "objection" | "matching" | "done";
+type Phase =
+  | "idle"
+  | "reading"
+  | "objection"
+  | "enriching"
+  | "matching"
+  | "done";
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const money = (n: number) =>
   n >= 1_000_000
@@ -113,6 +125,9 @@ export function CallIntake() {
 
   const [sample, setSample] = useState<Sample>(SAMPLES[0]!);
   const [transcript, setTranscript] = useState(SAMPLES[0]!.transcript);
+  // Editable so you can demo a brand-new customer — type the name + paste their call.
+  const [account, setAccount] = useState(SAMPLES[0]!.account);
+  const [contact, setContact] = useState(SAMPLES[0]!.contact);
   const [running, setRunning] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<IngestResult | null>(null);
@@ -124,6 +139,8 @@ export function CallIntake() {
     if (running) return;
     setSample(s);
     setTranscript(s.transcript);
+    setAccount(s.account);
+    setContact(s.contact);
     setResult(null);
     setPhase("idle");
     setError(null);
@@ -146,27 +163,32 @@ export function CallIntake() {
   }
 
   async function run() {
-    if (running || !transcript.trim()) return;
+    if (running || !transcript.trim() || !account.trim()) return;
     setRunning(true);
     setResult(null);
     setError(null);
+    // A name you typed (not the loaded sample) is a brand-new customer — drop the sample's
+    // preset signal so the pipeline DISCOVERS a why-now trigger instead of reusing one.
+    const isEdited = account.trim() !== sample.account;
     try {
       setPhase("reading");
-      await wait(900);
+      await wait(850);
       const res = (await ingest({
-        account: sample.account,
-        contact: sample.contact,
+        account: account.trim(),
+        contact: contact.trim() || account.trim(),
         title: sample.title,
         value: sample.value,
         transcript: transcript.trim(),
-        externalSignal: sample.externalSignal,
-        externalSignalType: sample.externalSignalType,
+        externalSignal: isEdited ? undefined : sample.externalSignal,
+        externalSignalType: isEdited ? undefined : sample.externalSignalType,
       })) as IngestResult;
       setResult(res);
       setPhase("objection");
-      await wait(900);
+      await wait(850);
+      setPhase("enriching"); // the pipeline scans for a why-now signal
+      await wait(950);
       setPhase("matching");
-      await wait(900);
+      await wait(850);
       setPhase("done");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ingest failed");
@@ -177,6 +199,9 @@ export function CallIntake() {
   }
 
   const showObjection = result && phase !== "reading";
+  const showEnrich =
+    result &&
+    (phase === "enriching" || phase === "matching" || phase === "done");
   const showMatch = result && (phase === "matching" || phase === "done");
 
   return (
@@ -258,16 +283,34 @@ export function CallIntake() {
             ))}
           </div>
 
-          <div className="intake-meta">
-            <span>
-              <strong>{sample.contact}</strong> · {sample.title}
+          <div className="intake-fields">
+            <label className="intake-field">
+              <span className="intake-field-k">Customer</span>
+              <input
+                className="intake-field-in"
+                value={account}
+                onChange={(e) => setAccount(e.target.value)}
+                placeholder="Account name"
+                disabled={running}
+                aria-label="Customer account"
+              />
+            </label>
+            <label className="intake-field">
+              <span className="intake-field-k">Contact</span>
+              <input
+                className="intake-field-in"
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
+                placeholder="Who you spoke with"
+                disabled={running}
+                aria-label="Contact"
+              />
+            </label>
+            <span className="intake-fields-hint">
+              {account.trim() && account.trim() !== sample.account
+                ? "New customer — the pipeline will scan for a fresh signal"
+                : `${money(sample.value)}/yr · edit to demo a new customer`}
             </span>
-            <span>{money(sample.value)}/yr</span>
-            {sample.externalSignal && (
-              <span className="intake-signal">
-                ⚡ {sample.account} {sample.externalSignal}
-              </span>
-            )}
           </div>
 
           <textarea
@@ -283,7 +326,7 @@ export function CallIntake() {
             type="button"
             className="intake-go"
             onClick={run}
-            disabled={running || !transcript.trim()}
+            disabled={running || !transcript.trim() || !account.trim()}
           >
             {running ? "Studying the call…" : "Ingest call →"}
           </button>
@@ -316,11 +359,23 @@ export function CallIntake() {
                 {showObjection ? result!.objection : "—"}
               </span>
             </li>
+            <li className={`intake-step${showEnrich ? " is-on" : ""}`}>
+              <span className="intake-step-k">Scanned for a why-now signal</span>
+              <span className="intake-step-v intake-step-v--sig">
+                {!showEnrich
+                  ? phase === "objection"
+                    ? "Enriching via Fiber…"
+                    : "—"
+                  : result!.signal
+                    ? `⚡ ${result!.discoveredSignal ? "Fiber found" : "on file"}: ${result!.account} ${result!.signal}`
+                    : "no fresh trigger"}
+              </span>
+            </li>
             <li className={`intake-step${showMatch ? " is-on" : ""}`}>
               <span className="intake-step-k">Checked what you shipped</span>
               <span className="intake-step-v">
                 {!showMatch
-                  ? phase === "objection"
+                  ? phase === "enriching"
                     ? "Matching against the changelog…"
                     : "—"
                   : result!.ripe
@@ -334,6 +389,21 @@ export function CallIntake() {
             <div
               className={`intake-verdict ${result.ripe ? "is-ripe" : "is-dead"}`}
             >
+              {/* Unambiguous proof it persisted: the saved record + the live DB totals. */}
+              <p className="intake-saved" role="status">
+                <span className="intake-saved-tick" aria-hidden>
+                  ✓
+                </span>
+                {result.replaced
+                  ? "Updated in the pipeline"
+                  : "Written to the pipeline"}
+                <span className="intake-saved-rec">
+                  {result.account} · {result.objection}
+                  {result.signal ? ` · ⚡ ${result.signal}` : ""}
+                  {result.ripe ? ` · draft ready` : ` · on watch`}
+                </span>
+              </p>
+
               {result.ripe ? (
                 <>
                   <p className="intake-verdict-head">
@@ -344,9 +414,6 @@ export function CallIntake() {
                     raised is gone, and a re-open draft is written. It&rsquo;s
                     on the board now.
                   </p>
-                  <Link href="/" className="intake-cta">
-                    See it land in the pipeline →
-                  </Link>
                 </>
               ) : (
                 <>
@@ -358,11 +425,30 @@ export function CallIntake() {
                     The brain keeps it on watch; the day you ship the fix, this{" "}
                     {money(result.value)} deal lights up on its own.
                   </p>
-                  <Link href="/brain" className="intake-cta">
-                    See it on the brain (no green edge yet) →
-                  </Link>
                 </>
               )}
+
+              {/* DB state, straight from the write — the dashboard reads the same numbers. */}
+              <dl className="intake-landed" aria-label="Pipeline now (live)">
+                <div>
+                  <dt>In pipeline</dt>
+                  <dd>{result.totals.graveyard}</dd>
+                </div>
+                <div>
+                  <dt>Re-winnable</dt>
+                  <dd>{result.totals.scored}</dd>
+                </div>
+                <div>
+                  <dt>Recoverable</dt>
+                  <dd>{money(result.totals.recoveredValue)}</dd>
+                </div>
+              </dl>
+
+              <Link href="/" className="intake-cta">
+                {result.ripe
+                  ? "See it land in the pipeline →"
+                  : "See it on the board — on watch →"}
+              </Link>
             </div>
           )}
 
